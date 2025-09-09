@@ -1,0 +1,281 @@
+{
+  "main": {
+    "id": "3644a8567bcca5fb",
+    "type": "split",
+    "children": [
+      {
+        "id": "3ea94c36a19cbb2b",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "44ba9e14f5bd73e2",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "流程搭建梳理.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "流程搭建梳理"
+            }
+          },
+          {
+            "id": "0457f77f249c2836",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "人力模块/人力模块清单.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "人力模块清单"
+            }
+          },
+          {
+            "id": "64a7b671c8da381e",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "人力模块/矩阵业务定义.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "矩阵业务定义"
+            }
+          },
+          {
+            "id": "6bd9a4cc9e33e6a3",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "核心团队搭建.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "核心团队搭建"
+            }
+          },
+          {
+            "id": "853471d508c7835b",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "人力模块/人力模块清单.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "人力模块清单"
+            }
+          },
+          {
+            "id": "c88ea46c46a6be31",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "风变合作机制/风便合作梳理.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "风便合作梳理"
+            }
+          },
+          {
+            "id": "6355a6b38274fcad",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "通用模型/流程搭建梳理.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "流程搭建梳理"
+            }
+          }
+        ],
+        "currentTab": 6
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "dc3703956eb8ee3e",
+    "type": "split",
+    "children": [
+      {
+        "id": "b8bec726a461143d",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "a52ffef88cc94fcb",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "文件列表"
+            }
+          },
+          {
+            "id": "d5cf35ae306b1d2e",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "搜索"
+            }
+          },
+          {
+            "id": "79cf37fe1fc412ef",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "书签"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "150ca0d5b87ae810",
+    "type": "split",
+    "children": [
+      {
+        "id": "eac1a8a7d47bc6b1",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "b7d4808cf0068d60",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "流程搭建梳理.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "流程搭建梳理 的反向链接列表"
+            }
+          },
+          {
+            "id": "70521323239c9419",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "流程搭建梳理.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "流程搭建梳理 的出链列表"
+            }
+          },
+          {
+            "id": "016b02f7ced852bc",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "标签"
+            }
+          },
+          {
+            "id": "48484153d77ad05f",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "流程搭建梳理.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "流程搭建梳理 的大纲"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:打开快速切换": false,
+      "graph:查看关系图谱": false,
+      "canvas:新建白板": false,
+      "daily-notes:打开/创建今天的日记": false,
+      "templates:插入模板": false,
+      "command-palette:打开命令面板": false,
+      "bases:创建新数据库": false
+    }
+  },
+  "active": "6355a6b38274fcad",
+  "lastOpenFiles": [
+    "通用模型/本体论核心要素.md",
+    "技能清单/技能清单.md",
+    "风变合作机制/风便合作梳理.md",
+    "Modulon协议白皮书.md",
+    "Modulon协议黄皮书.md",
+    "人力与矩阵协议.md",
+    "核心团队搭建.md",
+    "通用模型/我们如何搭建流程.md",
+    "通用模型/模块核心理念.md",
+    "通用模型/相关规范指南.md",
+    "通用模型/流程搭建梳理.md",
+    "风变合作机制/合作内容.md",
+    "未命名",
+    "风变合作机制",
+    "人力模块/人力模块清单.md",
+    "技能清单",
+    "人力模块/L2 - 5.0 老版.md",
+    "人力模块/矩阵业务定义.md",
+    "人力模块/L2 - 129.md",
+    "通用模型",
+    "人力模块"
+  ]
+}

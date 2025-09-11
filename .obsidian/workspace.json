@@ -83,12 +83,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "风变合作机制/风便合作梳理.md",
+                "file": "通用模型/模块核心理念.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "风便合作梳理"
+              "title": "模块核心理念"
             }
           },
           {
@@ -97,12 +97,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Modulon协议白皮书.md",
+                "file": "核心团队搭建.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Modulon协议白皮书"
+              "title": "核心团队搭建"
             }
           }
         ],
@@ -254,30 +254,42 @@
       "bases:创建新数据库": false
     }
   },
-  "active": "a52ffef88cc94fcb",
+  "active": "6355a6b38274fcad",
   "lastOpenFiles": [
-    "Linear团队协作上手指南.md",
+    "通用模型/Modulon协议白皮书.md",
+    "通用模型/人力与矩阵协议.md",
+    "项目管理文档/Linear核心哲学与项目管理实践.md",
+    "项目管理文档",
+    "核心团队搭建.md",
+    "风变合作机制/合作内容.md",
+    "风变合作机制/风便合作梳理.md",
+    "对话总结.md",
+    "语鲸-内容/README_formatter.md",
+    "语鲸-内容/test_no_warning.html",
+    "语鲸-内容/sample-formatted-v2-screenshot.png",
+    "语鲸-内容/sample_formatted_v2.html",
+    "语鲸-内容/sample_content.txt",
+    "语鲸-内容/sample_content_formatted.html",
+    "语鲸-内容/document_formatter.py",
+    "语鲸-内容/complete-example-screenshot.png",
+    "语鲸-内容/complete_example.txt",
+    "语鲸-内容/complete_example_formatted.html",
+    "语鲸-内容",
+    "未命名文件夹",
+    "complete-example-screenshot.png",
+    "sample-formatted-v2-screenshot.png",
+    "README_formatter.md",
+    "项目管理文档/Linear团队协作上手指南.md",
     "通用模型/流程搭建梳理.md",
-    "Linear核心哲学与项目管理实践.md",
     "通用模型/本体论核心要素.md",
     "技能清单/技能清单.md",
-    "风变合作机制/风便合作梳理.md",
-    "Modulon协议白皮书.md",
-    "Modulon协议黄皮书.md",
-    "人力与矩阵协议.md",
-    "核心团队搭建.md",
+    "通用模型/Modulon协议黄皮书.md",
     "通用模型/我们如何搭建流程.md",
     "通用模型/模块核心理念.md",
     "通用模型/相关规范指南.md",
-    "风变合作机制/合作内容.md",
-    "未命名",
-    "风变合作机制",
     "人力模块/人力模块清单.md",
-    "技能清单",
     "人力模块/L2 - 5.0 老版.md",
     "人力模块/矩阵业务定义.md",
-    "人力模块/L2 - 129.md",
-    "通用模型",
-    "人力模块"
+    "人力模块/L2 - 129.md"
   ]
 }

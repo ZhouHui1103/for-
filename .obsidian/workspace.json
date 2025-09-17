@@ -284,6 +284,15 @@
   },
   "active": "7c9d8976b6579b57",
   "lastOpenFiles": [
+    "团队构建/JD草稿.md",
+    "CC-Docker-Test/本地终端配置指南.md",
+    "CC-Docker-Test/proxy.js",
+    "CC-Docker-Test/Dockerfile",
+    "CC-Docker-Test",
+    "Dockerfile",
+    "团队构建/技术笔试题-正式版.md",
+    "团队构建/笔试题目-草稿.md",
+    "团队构建",
     "战略相关/核心业务流程.md",
     "战略相关/边界定义.md",
     "战略相关/核心团队搭建.md",
@@ -309,19 +318,11 @@
     "语鲸-内容/sample-formatted-v2-screenshot.png",
     "语鲸-内容/sample_formatted_v2.html",
     "语鲸-内容/sample_content.txt",
-    "语鲸-内容/sample_content_formatted.html",
-    "语鲸-内容/document_formatter.py",
     "语鲸-内容/complete-example-screenshot.png",
-    "语鲸-内容/complete_example.txt",
-    "语鲸-内容/complete_example_formatted.html",
-    "语鲸-内容",
     "complete-example-screenshot.png",
     "sample-formatted-v2-screenshot.png",
     "README_formatter.md",
     "项目管理文档/Linear团队协作上手指南.md",
-    "技能清单/技能清单.md",
-    "人力模块/人力模块清单.md",
-    "人力模块/L2 - 5.0 老版.md",
-    "人力模块/矩阵业务定义.md"
+    "技能清单/技能清单.md"
   ]
 }

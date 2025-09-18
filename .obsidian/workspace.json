@@ -125,12 +125,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "通用模型/模块核心理念.md",
+                "file": "通用模型/流程搭建SOP.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "模块核心理念"
+              "title": "流程搭建SOP"
             }
           }
         ],
@@ -284,6 +284,19 @@
   },
   "active": "7c9d8976b6579b57",
   "lastOpenFiles": [
+    "团队构建/技术笔试题-正式版.html",
+    "团队构建/Vibe Coder JD_优化版.html",
+    "团队构建/image.png",
+    "团队构建/Vibe Coder JD.html",
+    "团队构建/Vibe Coder JD.md",
+    "通用模型/流程搭建梳理.md",
+    "通用模型/流程搭建SOP.md",
+    "通用模型/相关规范指南.md",
+    "通用模型/模块核心理念.md",
+    "通用模型/人力与矩阵协议.md",
+    "通用模型/我们如何搭建流程.md",
+    "通用模型/Modulon协议黄皮书.md",
+    "通用模型/Modulon协议白皮书.md",
     "团队构建/JD草稿.md",
     "CC-Docker-Test/本地终端配置指南.md",
     "CC-Docker-Test/proxy.js",
@@ -296,13 +309,6 @@
     "战略相关/核心业务流程.md",
     "战略相关/边界定义.md",
     "战略相关/核心团队搭建.md",
-    "通用模型/模块核心理念.md",
-    "通用模型/相关规范指南.md",
-    "通用模型/流程搭建梳理.md",
-    "通用模型/我们如何搭建流程.md",
-    "通用模型/人力与矩阵协议.md",
-    "通用模型/Modulon协议黄皮书.md",
-    "通用模型/Modulon协议白皮书.md",
     "通用模型/模块规范定义 - 老版.md",
     "通用模型/本体论核心要素.md",
     "人力模块/L2 - 129.md",
@@ -316,13 +322,8 @@
     "语鲸-内容/README_formatter.md",
     "语鲸-内容/test_no_warning.html",
     "语鲸-内容/sample-formatted-v2-screenshot.png",
-    "语鲸-内容/sample_formatted_v2.html",
-    "语鲸-内容/sample_content.txt",
     "语鲸-内容/complete-example-screenshot.png",
     "complete-example-screenshot.png",
-    "sample-formatted-v2-screenshot.png",
-    "README_formatter.md",
-    "项目管理文档/Linear团队协作上手指南.md",
-    "技能清单/技能清单.md"
+    "sample-formatted-v2-screenshot.png"
   ]
 }

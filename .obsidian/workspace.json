@@ -125,12 +125,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "人力模块/L2 - 129.md",
+                "file": "人力模块/项目管理矩阵提案.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "L2 - 129"
+              "title": "项目管理矩阵提案"
             }
           },
           {
@@ -139,12 +139,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "人力模块/矩阵协议提案.md",
+                "file": "通用模型/核心产出 - 优先级.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "矩阵协议提案"
+              "title": "核心产出 - 优先级"
             }
           }
         ],
@@ -298,6 +298,13 @@
   },
   "active": "398b6ec349bde7d0",
   "lastOpenFiles": [
+    "矩阵协议/L2 - 129.md",
+    "矩阵协议/矩阵业务定义.md",
+    "人力模块/矩阵协议提案.md",
+    "矩阵协议/矩阵协议提案.md",
+    "矩阵协议/测试单元落地故事.md",
+    "矩阵协议/项目测试故事.md",
+    "矩阵协议/客户服务故事.md",
     "矩阵协议/业务故事.md",
     "矩阵协议",
     "通用模型/核心产出 - 优先级.md",
@@ -321,18 +328,11 @@
     "process-protocol/验证/对象互动关系图谱规范.md",
     "process-protocol/流程架构/流程架构模板.md",
     "process-protocol/流程架构/流程架构规范.md",
-    "process-protocol/Workflow_Implementation_Log.md",
     "process-protocol/SOP",
-    "process-protocol/README.md",
     "process-protocol/元数据",
-    "process-protocol/业务流程设计工作流规范.md",
     "process-protocol/业务场景",
     "process-protocol/验证",
-    "process-protocol/文档模板设计模板.md",
-    "process-protocol/文档规范设计模板.md",
-    "process-protocol/文档场域设计规范.md",
     "process-protocol/流程架构",
-    "process-protocol/工作流文档模板.md",
     "process-protocol",
     "团队构建/image.png",
     "语鲸-内容/sample-formatted-v2-screenshot.png",

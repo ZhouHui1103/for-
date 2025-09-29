@@ -1,0 +1,2455 @@
+# 多维表格记录数据结构
+多维表格数据表中的每一行数据都是一条记录（record）。一条记录 `record` 中的数据用 `fields` 参数表示。本文档介绍多维表格记录数据 `fields` 的数据结构。
+
+![](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/abc84b39be159ccdcafa707ee141144d_hLPkqUf5x5.png?height=503&lazyload=true&maxWidth=750&width=1536)
+
+## fields 示例
+
+上图中，高亮记录的数据结构如下所示：
+
+```json
+{
+  "fields": {
+    "任务情况总结": [
+      {
+        "text": "网站更新任务由黄泡泡负责，正在进行中",
+        "type": "text"
+      }
+    ],
+    "任务执行人": [
+      {
+        "avatar_url": "https://s1-imfile.feishucdn.com/static-resource/v1/v3_00g2_058610dc-f65c-40c5-afac-46e83919630g~?image_size=72x72&cut_type=default-face&quality=&format=jpeg&sticker_format=.webp",
+        "email": "amandahuang@bytedance.com",
+        "en_name": "Amanda Huang",
+        "id": "ou_8240099442cf5da49f04f4bf8f8abcef",
+        "name": "黄泡泡"
+      }
+    ],
+    "任务描述": [
+      {
+        "text": "更新公司网站",
+        "type": "text"
+      }
+    ],
+    "开始日期": 1675440000000,
+    "是否延期": {
+      "type": 1,
+      "value": [
+        {
+          "text": "✅ 正常",
+          "type": "text"
+        }
+      ]
+    }
+  }
+}
+```
+
+## fields 结构
+
+fields 字段为 map 型，由字段名称和其具体内容的键值对组成。
+```json
+{
+  "任务情况总结": [
+    {
+      "text": "网站更新任务由黄泡泡负责，正在进行中",
+      "type": "text"
+    }
+  ]
+}
+```
+
+参数 | 数据类型 | 描述 | 示例值
+---|---|---|---
+key | string | 多维表格数据表中的字段名称。 | "任务情况总结"
+value | union | 某个字段的具体内容，其结构可以是数字、字符串、布尔型、字符串列表或对象列表。详情参考下文。 | 该示例值为对象列表，更多示例，参考下文。<br>```json<br>[<br>{<br>"text": "网站更新任务正在进行中",<br>"type": "text"<br>}<br>]<br>```
+
+### key 结构
+
+fields 字段中的 key 始终为字符串类型，对应的是多维表格每列的标题，如 "任务情况总结"。
+
+### value 结构
+
+本小节介绍 fields 中不同的字段类型对应的 value 结构的数据类型和示例。
+
+字段类型 type 枚举 | 字段类型 | value 数据类型 | value 描述 | value 示例值 | 限制
+---|---|---|---|---|---
+1 | 文本、邮箱或条码。使用 <code>ui_type</code> 区分，详情参考下面 **文本、邮箱或条码** 部分的描述。 | 写入时为 string，返回时为 list of object | 请参考下面 **文本、邮箱或条码** 部分的描述。 | 请参考下面 **文本、邮箱或条码** 部分的示例。 | 单个单元格内容最多 10 万个字符
+2 | 数字、进度、货币或评分。使用 <code>ui_type</code> 区分：<br>- 当 <code>ui_type</code> 为 "Number" 时，字段类型为数字<br>- 当 <code>ui_type</code> 为 "Progress" 时，字段类型为进度<br>- 当 <code>ui_type</code> 为 "Currency" 时，字段类型为货币<br>- 当 <code>ui_type</code> 为 "Rating" 时，字段类型为评分 | number | 数字类型 | <code>0.5</code> | 无
+3 | 单选 | string | 选项名称文本 | <code>"进行中"</code> | 单选字段中的选项总数不能超过 20,000 个
+4 | 多选 | array&lt;string&gt; | 包含多个选项名字符串的数组 | ```json<br>[<br>"审批集成",<br>"办公管理",<br>"身份管理"<br>]<br>``` | - 多选字段中的选项总数不能超过 20,000 个<br>- 单个单元格中的选项数不能超过 1,000
+5 | 日期 | number | Unix 时间戳，单位是毫秒 | <code>1675526400000</code> | 无
+7 | 复选框 | boolean | 可选值：<br>- true：勾选样式<br>- false：未勾选样式 | <code>true</code> | 无
+11 | 人员 | list of object | 请参考下面 **人员** 部分的描述。 | ```json<br>[<br>{<br>"avatar_url": "https://s1-imfile.feishucdn.com/static-resource/v1/v3_00g2_058610dc-f65c-40c5-afac-46e83919630g~?image_size=72x72&cut_type=default-face&quality=&format=jpeg&sticker_format=.webp",<br>"email": "amandahuang@bytedance.com",<br>"en_name": "Amanda Huang",<br>"id": "ou_8240099442cf5da49f04f4bf8f8abcef",<br>"name": "黄泡泡"<br>}<br>]<br>``` | - 单个单元格的人员数量不能超过 1,000<br>- 对于记录的写接口，仅支持传入 `id` 参数
+13 | 电话号码 | string | 电话号码，符合正则表达式 (\+)?\d* 的字符串 | <code>"17899870000"</code> | 电话号码长度不能超过 64
+15 | 超链接 | object | 对于超链接类型的字段，value 中的元素定义如下所示：<br>- text：超链接中展示的文本<br>- link：链接 | ```json<br>{<br>"link": "https://open.feishu.cn/document/home/index",<br>"text": "飞书开放平台"<br>}<br>``` | 无
+17 | 附件 | list of object | 请参考下面 **附件** 部分的描述。 | 请参考下面 **附件** 部分的示例。 | 单个单元格中的附件数不能超过 100
+18 | 单向关联 | object | 对于单向关联类型的字段，value 为包含多个 record_id 字符串的数组。定义如下所示：<br>- link_record_ids：关联的记录 ID，array 类型，可包含多个记录 ID 字符串。 | ```json<br>{<br>"link_record_ids": [<br>"reclzUoBLn",<br>"rec7bYQoX1",<br>"recFIE3n52"<br>]<br>}<br>``` | 单个单元格的单向关联数不能超过 500
+19 | 查找引用 | object | 查找引用本质上为公式。其 value 定义与公式相同。请参考下面 **公式或查找引用** 部分的描述。 | 请参考下面 **公式或查找引用** 部分的描述。 | 无
+20 | 公式 | object | 请参考下面 **公式或查找引用** 部分的描述。 | 请参考下面 **公式或查找引用** 部分的示例。 | 无
+21 | 双向关联 | object | 对于双向关联类型的字段，value 为包含多个 record_id 字符串的数组，定义如下所示：<br>- link_record_ids：关联的记录 ID，array 类型，可包含多个记录 ID 字符串。 | ```json<br>{<br>"link_record_ids": [<br>"reclzUoBLn",<br>"rec7bYQoX1",<br>"recFIE3n52"<br>]<br>}<br>``` | 单个单元格的双向关联数不能超过 500
+22 | 地理位置 | object | 对于地理位置类型的字段，value 中的元素定义如下所示：<br>- location：经纬度<br>- pname：省<br>- cityname：市<br>- adname：区<br>- address：详细地址<br>- name：地名<br>- full_address：完整地址 | ```json<br>{<br>"address": "学清路10号院学清嘉创大厦",<br>"adname": "海淀区",<br>"cityname": "北京市",<br>"full_address": "字节跳动，北京市北京市海淀区学清路10号院学清嘉创大厦",<br>"location": "116.352681,40.01437",<br>"name": "字节跳动",<br>"pname": "北京市"<br>}<br>``` | 无
+23 | 群组 | list of object | 对于群组类型的字段，value 中的元素定义如下所示：<br>- name：群组名称<br>- avatar_url：群组头像链接<br>- id：群组的 ID | ```json<br>[<br>{<br>"avatar_url": "https://s1-imfile.feishucdn.com/static-resource/avatar/default-avatar_9fb72564-d52a-49b0-9de8-f79071a02286_96.webp",<br>"id": "oc_d2a947abb78bbbbb12d4cad55fbabcef",<br>"name": "测试部门"<br>}<br>]<br>``` | 单个单元格中的群组数不能超过 10 个
+1001 | 创建时间 | number | Unix 时间戳，单位是毫秒。 | <code>1675526400000</code> | -
+1002 | 最后更新时间 | number | Unix 时间戳，单位是毫秒。 | <code>1675526400000</code> | -
+1003 | 创建人 | object | 对于人员类型的字段，value 中的元素定义如下所示：<br>- id：人员的用户 ID，支持 [open_id](https://open.feishu.cn/document/uAjLw4CM/ugTN1YjL4UTN24CO1UjN/trouble-shooting/how-to-obtain-openid)、[union_id](https://open.feishu.cn/document/uAjLw4CM/ugTN1YjL4UTN24CO1UjN/trouble-shooting/how-to-obtain-union-id) 和 [user_id](https://open.feishu.cn/document/uAjLw4CM/ugTN1YjL4UTN24CO1UjN/trouble-shooting/how-to-obtain-user-id) <br>- name：人员名称（不支持通过写接口传入）<br>- avatar_url：人员头像链接（不支持通过写接口传入）<br>- en_name：人员英文名称（不支持通过写接口传入）<br>- email：人员邮箱（不支持通过写接口传入） | ```json<br>[<br>{<br>"avatar_url": "https://s1-imfile.feishucdn.com/static-resource/v1/v3_00g2_058610dc-f65c-40c5-afac-46e83919630g~?image_size=72x72&cut_type=default-face&quality=&format=jpeg&sticker_format=.webp",<br>"email": "amandahuang@bytedance.com",<br>"en_name": "Amanda Huang",<br>"id": "ou_8240099442cf5da49f04f4bf8f8abcef",<br>"name": "黄泡泡"<br>}<br>]<br>``` | 无
+1004 | 修改人 | object | 对于人员类型的字段，value 中的元素定义如下所示：<br>- id：人员的用户 ID，支持 [open_id](https://open.feishu.cn/document/uAjLw4CM/ugTN1YjL4UTN24CO1UjN/trouble-shooting/how-to-obtain-openid)、[union_id](https://open.feishu.cn/document/uAjLw4CM/ugTN1YjL4UTN24CO1UjN/trouble-shooting/how-to-obtain-union-id) 和 [user_id](https://open.feishu.cn/document/uAjLw4CM/ugTN1YjL4UTN24CO1UjN/trouble-shooting/how-to-obtain-user-id) <br>- name：人员名称（不支持通过写接口传入）<br>- avatar_url：人员头像链接（不支持通过写接口传入）<br>- en_name：人员英文名称（不支持通过写接口传入）<br>- email：人员邮箱（不支持通过写接口传入） | ```json<br>[<br>{<br>"avatar_url": "https://s1-imfile.feishucdn.com/static-resource/v1/v3_00g2_058610dc-f65c-40c5-afac-46e83919630g~?image_size=72x72&cut_type=default-face&quality=&format=jpeg&sticker_format=.webp",<br>"email": "amandahuang@bytedance.com",<br>"en_name": "Amanda Huang",<br>"id": "ou_8240099442cf5da49f04f4bf8f8abcef",<br>"name": "黄泡泡"<br>}<br>]<br>``` | 无
+1005 | 自动编号 | string | 由自动编号规则组成的字符串。 | `"1"` | 无
+
+#### **文本、邮箱或条码**
+
+字段类型 type 枚举为 1 时，字段类型基于 `ui_type` 区分，可以是文本、邮箱或条码。详情参考下文。
+- 当 `ui_type` 为 "Text"时，字段为文本类型，其 value 中的元素定义如下所示：
+
+参数 | 数据类型 | 描述
+---|---|---
+type | string | 文本展示类型，可选值有：<br>- text：纯文本类型<br>- mention：提及人或提及云文档类型<br>- url：超链接类型
+text | string | 文本内容
+token | string | 当 type 字段为 mention 时，该字段有效。<br>- 当 mentionType 为 User 时，token 为用户 ID<br>- 当 mentionType 为 Docx 时，token 为文档的 document_id<br>- 当 mentionType 为 Sheet 时，token 为电子表格的 spreadsheet_token<br>- 当 mentionType 为 Bitable时，token 为多维表格的 app_token
+link | string | 链接。当 type 字段为 url 时，该字段有效
+mentionType | string | 当 type 字段为 mention 时，该字段有效，可选值有：<br>- User：提及用户<br>- Docx：提及文档<br>- Sheet：提及电子表格<br>- Bitable：提及多维表格
+mentionNotify | boolean | 当 type 字段为 mention 且 mentionType 字段为 User 时，该字段有效。可选值有：<br>- false：不提及该用户<br>- true：提及该用户
+name | string | 提及的用户名称。当 type 字段为 mention 且 mentionType 字段为 User 时，该字段有效
+
+<br>
+- 当 `ui_type` 为 "Barcode" 时，字段类型为条码类型，其 value 的示例如下所示：
+    - type：固定取值 "text"
+    - text：条码编号
+       ```json
+        [
+          {
+            "text": "FS0001",
+            "type": "text"
+          }
+        ]
+        ```
+- 当 `ui_type` 为 "Email" 时，字段类型为邮箱类型，其 value 的示例如下所示：
+    - link：邮箱的 URL 链接
+    - type：固定取值 "url"
+    - text：用户邮箱
+      ```json
+      [
+          {
+              "link": "mailto:zhangmin@bytedance.com",
+              "text": "zhangmin@bytedance.com",
+              "type": "url"
+          }
+      ]
+        ```
+#### **人员**
+对于人员类型的字段，value 中的元素定义如下所示：warning
+若以下参数作为请求参数使用，仅支持 `id` 参数作为入参。
+
+参数 | 数据类型 | 描述
+---|---|---
+id | string | 人员的用户 ID，支持 [open_id](https://open.feishu.cn/document/uAjLw4CM/ugTN1YjL4UTN24CO1UjN/trouble-shooting/how-to-obtain-openid)、[union_id](https://open.feishu.cn/document/uAjLw4CM/ugTN1YjL4UTN24CO1UjN/trouble-shooting/how-to-obtain-union-id) 和 [user_id](https://open.feishu.cn/document/uAjLw4CM/ugTN1YjL4UTN24CO1UjN/trouble-shooting/how-to-obtain-user-id)
+name | string | 人员名称，不支持通过写接口传入
+avatar_url | string | 人员头像链接，不支持通过写接口传入
+en_name | string | 人员英文名称，不支持通过写接口传入
+email | string | 人员邮箱，不支持通过写接口传入
+
+#### **附件**
+
+对于附件类型的字段，value 中的元素定义如下所示：
+
+参数 | 数据类型 | 描述
+---|---|---
+file_token | string | 附件的 token。你可以使用下载素材接口下载该附件
+name | string | 附件名称
+type | string | 附件的 mime 类型, 如: image/png
+size | int | 附件大小。单位：字节
+url | string | 附件 url 链接，需 access token 鉴权，你可以使用下载素材接口下载该附件
+tmp_url | string | 生成附件临时下载链接的 url 链接，需 access token 鉴权，可使用[获取素材临时下载链接](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/drive-v1/media/batch_get_tmp_download_url)接口获取链接
+
+附件类型的 value 的示例如下所示：
+```json
+[
+  {
+    "file_token": "J7GdbgNWWoD1fwx7oWccxdgknIe",
+    "name": "58cc930b89.png",
+    "size": 108867,
+    "tmp_url": "https://open.feishu.cn/open-apis/drive/v1/medias/batch_get_tmp_download_url?file_tokens=J7GdbgNWWoD1fwx7oWccxdgknIe&extra=%7B%22bitablePerm%22%3A%7B%22tableId%22%3A%22tblx0Ed2NnBULN6a%22%2C%22rev%22%3A5%7D%7D",
+    "type": "image/png",
+    "url": "https://open.feishu.cn/open-apis/drive/v1/medias/J7GdbgNWWoD1fwx7oWccxdgknIe/download?extra=%7B%22bitablePerm%22%3A%7B%22tableId%22%3A%22tblx0Ed2NnBULN6a%22%2C%22rev%22%3A5%7D%7D"
+  }
+]
+```
+
+#### **公式或查找引用**
+
+对于公式或查找引用类型的字段，value 中的元素定义如下所示：
+
+参数 | 数据结构 | 描述
+---|---|---
+type | number | 用于指定 value 的数据类型，可选值如下所示：（相同字段类型用 ui_type 区分）：<br>- 1：文本、条码<br>- 2：数字、进度、货币、评分<br>- 3：单选<br>- 4：多选<br>- 5：日期<br>- 7：复选框<br>- 11：人员<br>- 13：电话号码<br>- 15：超链接<br>- 17：附件<br>- 18：单向关联<br>- 19：查找引用<br>- 20：公式<br>- 21：双向关联<br>- 22：地理位置<br>- 23：群组<br>- 1001：创建时间<br>- 1002：最后更新时间<br>- 1003：创建人<br>- 1004：修改人<br>- 1005：自动编号
+ui_type | string | 字段的 UI 类型，可选值如下所示：<br>- Text：文本<br>- Barcode：条码<br>- Number：数字<br>- Progress：进度<br>- Currency：货币<br>- Rating：评分<br>- SingleSelect：单选<br>- MultiSelect：多选<br>- DateTime：日期<br>- Checkbox：复选框<br>- User：人员<br>- GroupChat：群组<br>- Phone：电话号码<br>- Url：超链接<br>- Attachment：附件<br>- SingleLink：单向关联<br>- Formula：公式<br>- DuplexLink：双向关联<br>- Location：地理位置<br>- CreatedTime：创建时间<br>- ModifiedTime：最后更新时间<br>- CreatedUser：创建人<br>- ModifiedUser：修改人<br>- AutoNumber：自动编号
+value | list | type 字段决定 value 的数据结构，可参考本文档中 value 的结构。<br>**注意**：当对应的基础类型的数据结构为非 list 形式时，该字段为对应数据的 list 格式。
+
+公式或查找引用类型的 value 的示例如下所示：
+```json
+{
+  "type": 1,
+  "value": [
+    {
+      "text": "✅ 正常",
+      "type": "text"
+    }
+  ]
+}
+```
+# 记录筛选参数填写说明
+
+在多维表格部分接口中，可以通过请求参数 `filter` 等设置筛选条件，筛选出你需要的记录。本文档介绍如何填写筛选参数。
+
+## 筛选参数结构说明
+
+筛选参数的描述和结构如下所示。
+
+参数名称 | 数据类型 | 描述
+---|---|---
+filter | filter_info | 包含条件筛选信息的对象。
+└ conjunction | string | 表示条件之间的逻辑连接词，可以是 "and" 或 "or"。
+└ conditions | condition[] | 筛选条件集合。
+└ └  field_name | string | 条件字段的名称。
+└ └  operator | string | 条件运算符。其可选值有：<br>- is：等于<br>- isNot：不等于（不支持日期字段）<br>- contains：包含（不支持日期字段）<br>- doesNotContain：不包含（不支持日期字段）<br>- isEmpty：为空<br>- isNotEmpty：不为空<br>- isGreater：大于<br>- isGreaterEqual：大于等于（不支持日期字段）<br>- isLess：小于<br>- isLessEqual：小于等于（不支持日期字段）<br>- like：LIKE 运算符。暂未支持<br>- in：IN 运算符。暂未支持
+└ └ value | string[] | 条件的值，可以是单个值或多个值的数组。不同字段类型和不同的 operator 可填的值不同。详情参考下文字段目标值（value）填写说明。
+
+`filter` 的数据结构如下所示：
+```json
+{
+  "filter": {
+    "conjunction": "and",
+    "conditions": [
+      {
+        "field_name": "字段1",
+        "operator": "is",
+        "value": [
+          "文本内容"
+        ]
+      }
+    ]
+  }
+}
+```
+
+## filter 使用示例
+
+如下为一个员工销售额表。本小节根据该表格提供使用 `filter` 参数示例。
+|  员工名称	| 职位  	| 销售额 	|
+|---	|---	|---	|
+| 张小一 	| 初级销售员 	| 10000.0 	|
+| 张小二 	| 初级销售员 	| 15000.0 	|
+| 张小三 	| 初级销售员 	| 20000.0 	|
+| 张小四 	| 高级销售员 	| 30000.0 	|
+| 张小五 	| 高级销售员 	| 50000.0 	|
+| 张小六 	| 销售经理 	| 100000.0 	|
+
+- 要筛选出职位为"初级销售员"，**且**销售额大于 10000 的记录，filter 参数示例如下所示：
+
+```JSON
+  {
+    "filter": {
+      "conjunction": "and",
+      "conditions": [
+        {
+          "field_name": "职位",
+          "operator": "is",
+          "value": [
+            "初级销售员"
+          ]
+        },
+        {
+          "field_name": "销售额",
+          "operator": "isGreater",
+          "value": [
+            "10000.0"
+          ]
+        }
+      ]
+    }
+  }
+  ```
+
+- 要筛选职位为"高级销售员"，或者销售额大于 20000 的记录，filter 参数示例如下所示：
+
+```JSON
+    {
+      "filter": {
+        "conjunction": "or",
+        "conditions": [
+          {
+            "field_name": "职位",
+            "operator": "is",
+            "value": [
+              "高级销售员"
+            ]
+          },
+          {
+            "field_name": "销售额",
+            "operator": "isGreater",
+            "value": [
+              "20000.0"
+            ]
+          }
+        ]
+      }
+    }
+    ```
+
+- 要筛选出职位为"初级销售员" **或**“高级销售员”，**且** 销售额为 10000 **或** 20000 的记录，filter 参数示例如下所示：
+如下示例，目前仅支持使用一层 children 参数，不支持再次嵌套使用。
+  ```json
+  {
+    "filter": {
+      "conjunction": "and",
+      "children": [
+        {
+          "conjunction": "or",
+          "conditions": [
+            {
+              "field_name": "职位",
+              "operator": "is",
+              "value": [
+                "高级销售员"
+              ]
+            },
+            {
+              "field_name": "职位",
+              "operator": "is",
+              "value": [
+                "初级销售员"
+              ]
+            }
+          ]
+        },
+        {
+          "conjunction": "or",
+          "conditions": [
+            {
+              "field_name": "销售额",
+              "operator": "is",
+              "value": [
+                "10000.0"
+              ]
+            },
+            {
+              "field_name": "销售额",
+              "operator": "is",
+              "value": [
+                "20000.0"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+  ```
+
+## 字段目标值（value）填写说明
+多维表格支持以下类型的字段作为筛选条件。目前暂不支持公式或查找引用的字段类型作为筛选条件。
+**注意事项**：当 value 填空值 [] 时，请确保按照 `"value":[]` 格式传入 value，否则将报缺失 value 值的错误。
+
+字段类型 | 目标值示例 | 描述 | 限制
+---|---|---|---
+多行文本 | <code>["文本内容"]</code> | 填写对应的文本内容 | - 列表只能有一个元素或零个元素<br>- operator为`isEmpty`或`isNotEmpty`时，需填空值 `[]`
+条码 | <code>["条码内容"]</code> | 填写对应的条码内容 | - 列表只能有一个元素或零个元素<br>- operator为`isEmpty`或`isNotEmpty`时，需填空值 `[]`
+数字 | <code>["23.4"]</code> | 填写对应数字的字符串形式 | - 列表只能有一个元素或零个元素<br>- operator为`isEmpty`或`isNotEmpty`时，需填空值 `[]`
+货币 | <code>["23.4"]</code> | 填写对应数字的字符串形式 | - 列表只能有一个元素或零个元素<br>- operator为`isEmpty`或`isNotEmpty`时，需填空值 `[]`
+进度 | <code>["0.34"]</code> | 填写对应数字的字符串形式 | - 列表只能有一个元素或零个元素<br>- operator为`isEmpty`或`isNotEmpty`时，需填空值 `[]`
+评分 | <code>["1"]</code> | 填写对应数字的字符串形式 | - 列表只能有一个元素或零个元素<br>- operator为`isEmpty`或`isNotEmpty`时，需填空值 `[]`
+单选 | <code>["a","b"]</code> | 列表中填写选项内容 | 列表中可能存在多个元素：<br>- operator 为 `is` 或`isNot` 需填写一个元素<br>- operator为`isEmpty`或`isNotEmpty`时，需填空值 `[]`<br>- 其他 operator 可填写多个元素
+多选 | <code>["a","b"]</code> | 包含多个选项名字符串的数组 | 列表中可能存在多个元素：<br>- operator 为 `is` 或`isNot` 需填写一个元素<br>- operator为`isEmpty`或`isNotEmpty`时，需填空值 `[]`<br>- 其他 operator 可填写多个元素
+日期 | <code>["ExactDate","1702449755000"]</code> | Unix 时间戳，单位是毫秒 | 列表中可能存在多个元素，具体参考下文**日期字段填写说明**
+复选框 | <code>["true"]</code> 或 <code>["false"]</code> | 元素填写对应的布尔内容 | 列表只能有一个元素，operator 仅支持 `is`
+人员 | <code>["ou_9a971ded01b4ca66f4798549878abcef"]</code> | 填写对应的用户 ID。用户 ID 类型需与[查询记录](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-record/search)中 `user_id_type`<br>参数指定的类型一致，默认类型为 open_id | 列表中可能存在多个元素：<br>- operator 为 `is` 或`isNot` 需填写一个元素<br>- operator为`isEmpty`或`isNotEmpty`时，需填空值 `[]`<br>- 其他 operator 可填写多个元素
+电话号码 | <code>["131xxxx6666"]</code> | 填写对应的电话号码 | - 列表只能有一个元素或零个元素<br>- operator为`isEmpty`或`isNotEmpty`时，需填空值 `[]`
+超链接 | <code>["链接显示名称"]</code> | 填写对应的超链接名称 | - 列表只能有一个元素或零个元素<br>- operator为`isEmpty`或`isNotEmpty`时，需填空值 `[]`
+附件 | <code>[]</code> | 仅支持`isEmpty`或`isNotEmpty` | 需填空值 `[]`
+单向关联 | <code>["recnVYsuqV"]</code> | 填写对应的记录 ID | 列表中可能存在多个元素：<br>- operator 为 `is` 或`isNot` 需填写一个元素<br>- operator为`isEmpty`或`isNotEmpty`时，需填空值 `[]`<br>- 其他 operator 可填写多个元素
+双向关联 | <code>["recnVYsuqV"]</code> | 填写对应的记录 ID | 列表中可能存在多个元素：<br>- operator 为 `is` 或`isNot` 需填写一个元素<br>- operator为`isEmpty`或`isNotEmpty`时，需填空值 `[]`<br>- 其他 operator 可填写多个元素
+地理位置 | <code>["天安门广场，北京市东城区东长安街"]</code> | 填写对应的地址 | 列表只能有一个元素或零个元素，operator为`isEmpty`或`isNotEmpty`填空值[]
+群组 | <code>["oc_cd07f55f14d6f4a4f1b51504e7e97f48"]</code> | 填写对应的群组 ID | 列表中可能存在多个元素：<br>- operator 为 `is` 或`isNot` 需填写一个元素<br>- operator为`isEmpty`或`isNotEmpty`时，需填空值 `[]`<br>- 其他 operator 可填写多个元素
+创建时间 | <code>["ExactDate","1702449755000"]</code> | Unix 时间戳，单位是毫秒 | 列表中可能存在多个元素，具体参考下文**日期字段填写说明**
+最后更新时间 | <code>["ExactDate","1702449755000"]</code> | Unix 时间戳，单位是毫秒 | 列表中可能存在多个元素，具体参考下文**日期字段填写说明**
+创建人 | <code>["ou_9a971ded01b4ca66f4798549878abcef"]</code> | 填写对应的用户 ID。用户 ID 类型需与[查询记录](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-record/search)中 `user_id_type`<br>参数指定的类型一致，默认类型为 open_id | 列表中可能存在多个元素：<br>- operator 为 `is` 或`isNot` 需填写一个元素<br>- operator为`isEmpty`或`isNotEmpty`时，需填空值 `[]`<br>- 其他 operator 可填写多个元素
+修改人 | <code>["ou_9a971ded01b4ca66f4798549878abcef"]</code> | 填写对应的用户 ID。用户 ID 类型需与[查询记录](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-record/search)中 `user_id_type`<br>参数指定的类型一致，默认类型为 open_id | 列表中可能存在多个元素：<br>- operator 为 `is` 或`isNot` 需填写一个元素<br>- operator为`isEmpty`或`isNotEmpty`时，需填空值 `[]`<br>- 其他 operator 可填写多个元素
+自动编号 | <code>["1"]</code> | 填写对应的自动编号值 | - 列表只能有一个元素或零个元素<br>- operator为`isEmpty`或`isNotEmpty`时，需填空值 `[]`
+
+## 日期字段填写说明
+日期筛选时，operator 仅支持 `is`、`isEmpty`、`isNotEmpty`、`isGreater`、`isLess` 五个值。
+
+当 operator 为 `isEmpty`或`isNotEmpty` 时，value 需填空值 `"value":[]`。
+
+当 operator 为 `is`、`isGreater` 或 `isLess` 时，参考下表填写日期字段。
+
+value 元素可选值 | 描述 | value 目标值示例 | 注意事项
+---|---|---|---
+<code>ExactDate</code> | 具体日期 | <code>["ExactDate","1702449755000"]</code> | - 需要填写 2 个元素。第二个元素需要填写具体日期的时间戳。<br>- 第二个元素虽然是时间戳，但是实际筛选时，会被转为文档时区当天的零点。<br>- 对于公式日期字段，第二个元素需要填写 yyyy/MM/dd 格式的日期文本，例如 2025/01/07
+<code>Today</code> | 今天 | <code>["Today"]</code> | 需要填写 1 个元素
+<code>Tomorrow</code> | 明天 | <code>["Tomorrow"]</code> | 需要填写 1 个元素
+<code>Yesterday</code> | 昨天 | <code>["Yesterday"]</code> | 需要填写 1 个元素
+<code>CurrentWeek</code> | 本周 | <code>["CurrentWeek"]</code> | - 需要填写 1 个元素<br>- operator 仅支持 `is`
+<code>LastWeek</code> | 上周 | <code>["LastWeek"]</code> | - 需要填写 1 个元素<br>- operator 仅支持 `is`
+<code>CurrentMonth</code> | 本月 | <code>["CurrentMonth"]</code> | - 需要填写 1 个元素<br>- operator 仅支持 `is`
+<code>LastMonth</code> | 上个月 | <code>["LastMonth"]</code> | - 需要填写 1 个元素<br>- operator 仅支持 `is`
+<code>TheLastWeek</code> | 过去七天内 | <code>["TheLastWeek"]</code> | - 需要填写 1 个元素<br>- operator 仅支持 <code>is</code>
+<code>TheNextWeek</code> | 未来七天内 | <code>["TheNextWeek"]</code> | - 需要填写 1 个元素<br>- operator 仅支持 <code>is</code>
+<code>TheLastMonth</code> | 过去三十天内 | <code>["TheLastMonth"]</code> | - 需要填写 1 个元素<br>- operator 仅支持 <code>is</code>
+<code>TheNextMonth</code> | 未来三十天内 | <code>["TheNextMonth"]</code> | - 需要填写 1 个元素<br>- operator 仅支持 <code>is</code>
+
+# 多维表格中添加子记录
+
+在多维表格中添加子记录，本质上是通过在子记录和父记录之间设置单向或双向关联字段来实现的。子记录会通过关联字段，映射至父记录，从而建立联系。本文档介绍如何通过 OpenAPI，在多维表格数据表中为一个记录添加子记录。
+## 前提条件
+
+你已创建了一个多维表格，且在多维表格中，已有一条记录作为父记录。
+
+![](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/ed1bf13eaffaae51a96a153f4faa80be_JMUAqSNi8R.png?height=866&lazyload=true&maxWidth=500&width=1050)
+
+## 流程说明
+
+添加子记录的整体流程如下所示：
+1. 调用[新增字段](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-field/create)接口，在多维表格中创建一个单向或双向关联字段，用于建立记录之间的关联关系。了解什么是单向或双向字段，参考飞书帮助中心文档：[使用多维表格单向关联字段](https://www.feishu.cn/hc/zh-CN/articles/361914682520-%E4%BD%BF%E7%94%A8%E5%A4%9A%E7%BB%B4%E8%A1%A8%E6%A0%BC%E5%8D%95%E5%90%91%E5%85%B3%E8%81%94%E5%AD%97%E6%AE%B5)、[使用多维表格双向关联字段](https://www.feishu.cn/hc/zh-CN/articles/653027931590-%E4%BD%BF%E7%94%A8%E5%A4%9A%E7%BB%B4%E8%A1%A8%E6%A0%BC%E5%8F%8C%E5%90%91%E5%85%B3%E8%81%94%E5%AD%97%E6%AE%B5)。
+1. 调用[查询记录](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-record/search)接口，获取已有的父记录的 ID。
+1. 调用[新增记录](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-record/create)接口，新增一条记录作为子记录，并确保该记录关联了已有的父记录。
+1. 调用[列出字段](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-field/list)接口，获取“单向关联字段”的字段 ID。
+1. 调用[更新视图](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-view/patch)接口，将 `hierarchy_config` 参数中的 `field_id` 设为“单向关联字段”的字段 ID，以更新表格视图的层级结构样式。
+
+## 操作步骤
+
+本小节以如下的一条记录为例，介绍如何为该记录添加子记录。
+
+![](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/ed1bf13eaffaae51a96a153f4faa80be_7JxlJ32vkA.png?height=866&lazyload=true&maxWidth=500&width=1050)
+
+1. 调用[新增字段](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-field/create)接口，在多维表格数据表中创建一个单向关联字段，用于建立记录之间的关联关系。请求体如下所示：
+
+```json
+    {
+      "field_name": "单向关联字段",
+      "property": {
+        "multiple": true,
+        "table_id": "tblY2ha8xGSabcef"
+      },
+      "type": 18
+    }
+    ```
+
+若调用成功，多维表格将呈现如下效果：
+
+![](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/5e8c72d4b11abd8d1f32d87651f33286_R5Tgu9HvDr.png?height=865&lazyload=true&maxWidth=500&width=1163)
+
+2. 调用[查询记录](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-record/search)接口，获取已有的父记录的 ID。请求体为空即可：
+
+```json
+    {}
+    ```
+
+若调用成功，接口将返回如下结构数据，其中 `rec9k8PAbR` 即为父记录的 ID。
+
+```json
+    {
+      "code": 0,
+      "data": {
+        "has_more": false,
+        "items": [
+          {
+            "fields": {
+              "单向关联字段": {},
+              "文本": [
+                {
+                  "text": "父记录",
+                  "type": "text"
+                }
+              ]
+            },
+            "record_id": "rec9k8PAbR"   // 父记录 ID
+          },
+          {
+            "fields": {
+              "单向关联字段": {}
+            },
+            "record_id": "recb9nHBYR"
+          },
+          {
+            "fields": {
+              "单向关联字段": {}
+            },
+            "record_id": "recwG1hh0g"
+          },
+          {
+            "fields": {
+              "单向关联字段": {}
+            },
+            "record_id": "recBlfgGRO"
+          },
+          {
+            "fields": {
+              "单向关联字段": {}
+            },
+            "record_id": "recKZHTepH"
+          },
+          {
+            "fields": {
+              "单向关联字段": {}
+            },
+            "record_id": "recDZXc9fs"
+          },
+          {
+            "fields": {
+              "单向关联字段": {}
+            },
+            "record_id": "recX9dPV90"
+          },
+          {
+            "fields": {
+              "单向关联字段": {}
+            },
+            "record_id": "rec6cq2RIk"
+          },
+          {
+            "fields": {
+              "单向关联字段": {}
+            },
+            "record_id": "recuK6kUA1"
+          },
+          {
+            "fields": {
+              "单向关联字段": {}
+            },
+            "record_id": "recLjQD5Eo"
+          }
+        ],
+        "total": 10
+      },
+      "msg": "success"
+    }
+    ```
+
+1. 调用[新增记录](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-record/create)接口，新增一条记录作为子记录，并确保该记录关联了已有的父记录。请求体示例如下所示：
+
+```json
+    {
+      "fields": {
+        "单向关联字段": [
+          "rec9k8PAbR"
+        ],
+        "文本": "子记录"
+      }
+    }
+    ```
+
+若调用成功，子记录将出现在数据表末尾，效果如下所示：
+
+![](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/1f27f151e95e8011daf5b50d5a6ce2fd_rdc40Je0KC.png?height=859&lazyload=true&maxWidth=500&width=1163)
+
+2. 调用[列出字段](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-field/list)接口，获取“单向关联字段”的字段 ID。若调用成功，接口将返回如下结构数据，其中 `fldfASqam8` 即为“单向关联字段”的字段 ID。
+
+```json
+    {
+      "code": 0,
+      "data": {
+        "has_more": false,
+        "items": [
+          {
+            "field_id": "fldplsqa97",
+            "field_name": "文本",
+            "is_hidden": false,
+            "is_primary": true,
+            "property": null,
+            "type": 1,
+            "ui_type": "Text"
+          },
+          {
+            "field_id": "fldfASqam8",   // 单向关联字段的字段 ID
+            "field_name": "单向关联字段",
+            "is_hidden": false,
+            "is_primary": false,
+            "property": {
+              "multiple": true,
+              "table_id": "tblmyHKpQG3k1kSD",
+              "table_name": "数据表"
+            },
+            "type": 18,
+            "ui_type": "SingleLink"
+          }
+        ],
+        "page_token": "fldfASqam8",
+        "total": 2
+      },
+      "msg": "success"
+    }
+    ```
+
+1. 调用[更新视图](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-view/patch)接口，参考如下请求示例，将 `hierarchy_config` 参数中的 `field_id` 设为“单向关联字段”的字段 ID，以更新表格视图的层级结构样式。
+
+```json
+    {
+      "property": {
+        "hierarchy_config": {
+          "field_id": "fldfASqam8"
+        }
+      },
+      "view_name": "表格"
+    }
+    ```
+
+若调用成功，子记录位置将位于父记录之下，最终效果如下所示：
+
+![](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/80a089503898e472752511edf43a1c70_TfHQUYJqVr.png?height=866&lazyload=true&maxWidth=500&width=1161)
+# 新增记录
+
+在多维表格数据表中新增一条记录。
+
+## 前提条件
+
+调用此接口前，请确保当前调用身份（tenant_access_token 或 user_access_token）已有多维表格的编辑等文档权限，否则接口将返回 HTTP 403 或 400 状态码。了解更多，参考[如何为应用或用户开通文档权限](https://open.feishu.cn/document/ukTMukTMukTM/uczNzUjL3czM14yN3MTN#16c6475a)。
+
+## 注意事项
+
+从其它数据源同步的数据表，不支持对记录进行增加、删除、和修改操作。
+
+## 请求
+
+基本 | 
+---|---
+HTTP URL | https://open.feishu.cn/open-apis/bitable/v1/apps/:app_token/tables/:table_id/records
+HTTP Method | POST
+接口频率限制 | [50 次/秒](https://open.feishu.cn/document/ukTMukTMukTM/uUzN04SN3QjL1cDN)
+支持的应用类型 | Custom App、Store App
+权限要求<br>**调用该 API 所需的权限。开启其中任意一项权限即可调用**<br>开启任一权限即可 | 新增记录(base:record:create)<br>查看、评论、编辑和管理多维表格(bitable:app)
+字段权限要求 | **注意事项**：该接口返回体中存在下列敏感字段，仅当开启对应的权限后才会返回；如果无需获取这些字段，则不建议申请<br>获取用户基本信息(contact:user.base:readonly)<br>获取用户 user ID(contact:user.employee_id:readonly)<br>以应用身份访问通讯录(contact:contact:access_as_app)<br>读取通讯录(contact:contact:readonly)<br>以应用身份读取通讯录(contact:contact:readonly_as_app)
+
+### 请求头
+
+名称 | 类型 | 必填 | 描述
+---|---|---|---
+Authorization | string | 是 | `tenant_access_token`<br>或<br>`user_access_token`<br>**值格式**："Bearer `access_token`"<br>**示例值**："Bearer u-7f1bcd13fc57d46bac21793a18e560"<br>[了解更多：如何选择与获取 access token](https://open.feishu.cn/document/uAjLw4CM/ugTN1YjL4UTN24CO1UjN/trouble-shooting/how-to-choose-which-type-of-token-to-use)
+Content-Type | string | 是 | **固定值**："application/json; charset=utf-8"
+
+### 路径参数
+
+名称 | 类型 | 描述
+---|---|---
+app_token | string | 多维表格 App 的唯一标识。不同形态的多维表格，其 `app_token` 的获取方式不同：<br>- 如果多维表格的 URL 以 ==**feishu.cn/base**== 开头，该多维表格的 `app_token` 是下图高亮部分：<br>![app_token.png](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/6916f8cfac4045ba6585b90e3afdfb0a_GxbfkJHZBa.png?height=766&lazyload=true&width=3004)<br>- 如果多维表格的 URL 以 ==**feishu.cn/wiki**== 开头，你需调用知识库相关[获取知识空间节点信息](https://open.feishu.cn/document/ukTMukTMukTM/uUDN04SN0QjL1QDN/wiki-v2/space/get_node)接口获取多维表格的 app_token。当 `obj_type` 的值为 `bitable` 时，`obj_token` 字段的值才是多维表格的 `app_token`。<br>了解更多，参考[多维表格 app_token 获取方式](https://open.feishu.cn/document/ukTMukTMukTM/uUDN04SN0QjL1QDN/bitable-overview#-752212c)。<br>**示例值**："bascng7vrxcxpig7geggXiCtadY"
+table_id | string | 多维表格数据表的唯一标识。获取方式：<br>- 你可通过多维表格 URL 获取 `table_id`，下图高亮部分即为当前数据表的 `table_id`<br>- 也可通过[列出数据表](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table/list)接口获取 `table_id`<br>![](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/18741fe2a0d3cafafaf9949b263bb57d_yD1wkOrSju.png?height=746&lazyload=true&maxWidth=700&width=2976)<br>**数据校验规则**：<br>- 长度范围：`0` ～ `50` 字符<br>**示例值**："tblUa9vcYjWQYJCj"
+
+### 查询参数
+
+名称 | 类型 | 必填 | 描述
+---|---|---|---
+user_id_type | string | 否 | 用户 ID 类型<br>**示例值**：open_id<br>**可选值有**：<br>- open_id：标识一个用户在某个应用中的身份。同一个用户在不同应用中的 Open ID 不同。[了解更多：如何获取 Open ID](https://open.feishu.cn/document/uAjLw4CM/ugTN1YjL4UTN24CO1UjN/trouble-shooting/how-to-obtain-openid)<br>- union_id：标识一个用户在某个应用开发商下的身份。同一用户在同一开发商下的应用中的 Union ID 是相同的，在不同开发商下的应用中的 Union ID 是不同的。通过 Union ID，应用开发商可以把同个用户在多个应用中的身份关联起来。[了解更多：如何获取 Union ID？](https://open.feishu.cn/document/uAjLw4CM/ugTN1YjL4UTN24CO1UjN/trouble-shooting/how-to-obtain-union-id)<br>- user_id：标识一个用户在某个租户内的身份。同一个用户在租户 A 和租户 B 内的 User ID 是不同的。在同一个租户内，一个用户的 User ID 在所有应用（包括商店应用）中都保持一致。User ID 主要用于在不同的应用间打通用户数据。[了解更多：如何获取 User ID？](https://open.feishu.cn/document/uAjLw4CM/ugTN1YjL4UTN24CO1UjN/trouble-shooting/how-to-obtain-user-id)<br>**默认值**：`open_id`<br>**当值为 `user_id`，字段权限要求**：<br>获取用户 user ID(contact:user.employee_id:readonly)
+client_token | string | 否 | 格式为标准的 uuidv4，操作的唯一标识，用于幂等的进行更新操作。此值为空表示将发起一次新的请求，此值非空表示幂等的进行更新操作。<br>**示例值**：fe599b60-450f-46ff-b2ef-9f6675625b97
+ignore_consistency_check | boolean | 否 | 是否忽略一致性读写检查，默认为 false，即在进行读写操作时，系统将确保读取到的数据和写入的数据是一致的。可选值：<br>- true：忽略读写一致性检查，提高性能，但可能会导致某些节点的数据不同步，出现暂时不一致<br>- false：开启读写一致性检查，确保数据在读写过程中一致<br>**示例值**：true
+
+### 请求体
+
+名称 | 类型 | 必填 | 描述
+---|---|---|---
+fields | map&lt;string, union&gt; | 是 | 要新增的记录的数据。你需先指定数据表中的字段（即指定列），再传入正确格式的数据作为一条记录。<br>**注意**：<br>该接口支持的字段类型及其描述如下所示：<br>- 文本： 填写字符串格式的值<br>- 数字：填写数字格式的值<br>- 单选：填写选项值，对于新的选项值，将会创建一个新的选项<br>- 多选：填写多个选项值，对于新的选项值，将会创建一个新的选项。如果填写多个相同的新选项值，将会创建多个相同的选项<br>- 日期：填写毫秒级时间戳<br>- 复选框：填写 true 或 false<br>- 条码<br>- 人员：填写用户的[open_id](https://open.feishu.cn/document/uAjLw4CM/ugTN1YjL4UTN24CO1UjN/trouble-shooting/how-to-obtain-openid)、[union_id](https://open.feishu.cn/document/uAjLw4CM/ugTN1YjL4UTN24CO1UjN/trouble-shooting/how-to-obtain-union-id) 或 [user_id](https://open.feishu.cn/document/uAjLw4CM/ugTN1YjL4UTN24CO1UjN/trouble-shooting/how-to-obtain-user-id)，类型需要与 user_id_type 指定的类型一致<br>- 电话号码：填写文本内容<br>- 超链接：参考以下示例，text 为文本值，link 为 URL 链接<br>- 附件：填写附件 token，需要先调用[上传素材](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/drive-v1/media/upload_all)或[分片上传素材](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/drive-v1/media/upload_prepare)接口将附件上传至该多维表格中<br>- 单向关联：填写被关联表的记录 ID<br>- 双向关联：填写被关联表的记录 ID<br>- 地理位置：填写经纬度坐标<br>不同类型字段的数据结构请参考[多维表格记录数据结构](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-record/bitable-record-data-structure-overview)。<br>**示例值**：{<br>"人员": [<br>{<br>"id": "ou_2910013f1e6456f16a0ce75ede9abcef"<br>}<br>]<br>}
+
+### 请求体示例
+```json
+{
+  "fields": {
+    "任务名称": "拜访潜在客户",
+    "条码": "+$$3170930509104X512356",
+    "工时": 10,
+    "货币": 3,
+    "评分": 3,
+    "进度": 0.25,
+    "单选": "选项1",
+    "多选": [
+      "选项1",
+      "选项2"
+    ],
+    "日期": 1674206443000,
+    "复选框": true,
+    "人员": [
+      {
+        "id": "ou_2910013f1e6456f16a0ce75ede9abcef"
+      },
+      {
+        "id": "ou_e04138c9633dd0d2ea166d79f54abcef"
+      }
+    ],
+    "群组": [
+      {
+        "id": "oc_cd07f55f14d6f4a4f1b51504e7e97f48"
+      }
+    ],
+    "电话号码": "1302616xxxx",
+    "超链接": {
+      "text": "飞书多维表格官网",
+      "link": "https://www.feishu.cn/product/base"
+    },
+    "附件": [
+      {
+        "file_token": "DRiFbwaKsoZaLax4WKZbEGCccoe"
+      },
+      {
+        "file_token": "BZk3bL1Enoy4pzxaPL9bNeKqcLe"
+      },
+      {
+        "file_token": "EmL4bhjFFovrt9xZgaSbjJk9c1b"
+      },
+      {
+        "file_token": "Vl3FbVkvnowlgpxpqsAbBrtFcrd"
+      }
+    ],
+    "单向关联": [
+      "recHTLvO7x",
+      "recbS8zb2m"
+    ],
+    "双向关联": [
+      "recHTLvO7x",
+      "recbS8zb2m"
+    ],
+    "地理位置": "116.397755,39.903179"
+  }
+}
+```
+
+## 响应
+
+### 响应体
+
+名称 | 类型 | 描述
+---|---|---
+code | int | 错误码，非 0 表示失败
+msg | string | 错误描述
+data | \- | \-
+record | app.table.record | 新增记录的内容
+fields | map&lt;string, union&gt; | 成功新增的记录的数据
+record_id | string | 新增记录的 ID
+created_by | person | 该记录的创建人信息。本接口不返回该参数
+id | string | 创建人的用户 ID，ID 类型与 `user_id_type` 所指定的类型一致
+name | string | 用户的中文名称
+en_name | string | 用户的英文名称
+email | string | 用户的邮箱
+avatar_url | string | 头像链接<br>**字段权限要求（满足任一）**：<br>获取用户基本信息(contact:user.base:readonly)<br>以应用身份访问通讯录(contact:contact:access_as_app)<br>读取通讯录(contact:contact:readonly)<br>以应用身份读取通讯录(contact:contact:readonly_as_app)
+created_time | int | 该记录的创建时间。本接口不返回该参数
+last_modified_by | person | 该记录最近一次更新的修改人。本接口不返回该参数
+id | string | 修改人的用户 ID，ID 类型与 `user_id_type` 所指定的类型一致
+name | string | 用户的中文名称
+en_name | string | 用户的英文名称
+email | string | 用户的邮箱
+avatar_url | string | 头像链接<br>**字段权限要求（满足任一）**：<br>获取用户基本信息(contact:user.base:readonly)<br>以应用身份访问通讯录(contact:contact:access_as_app)<br>读取通讯录(contact:contact:readonly)<br>以应用身份读取通讯录(contact:contact:readonly_as_app)
+last_modified_time | int | 该记录最近一次的更新时间。本接口不返回该参数
+shared_url | string | 记录分享链接，本接口不返回该参数，批量获取记录接口将返回该参数
+record_url | string | 记录链接，本接口不返回该参数，查询记录接口将返回该参数
+
+### 响应体示例
+```json
+{
+  "code": 0,
+  "data": {
+    "record": {
+      "fields": {
+        "任务名称": "维护客户关系",
+        "创建日期": 1674206443000,
+        "截止日期": 1674206443000
+      },
+      "id": "recusutYZm4ulo",
+      "record_id": "recusutYZm4ulo"
+    }
+  },
+  "msg": "success"
+}
+```
+
+### 错误码
+
+HTTP状态码 | 错误码 | 描述 | 排查建议
+---|---|---|---
+200 | 1254000 | WrongRequestJson | 请求体错误
+200 | 1254001 | WrongRequestBody | 请求体错误
+200 | 1254002 | Fail | 内部错误，请联系[技术支持](https://applink.feishu.cn/TLJpeNdW)
+200 | 1254003 | WrongBaseToken | app_token 错误
+200 | 1254004 | WrongTableId | table_id 错误
+200 | 1254005 | WrongViewId | view_id 错误
+200 | 1254006 | WrongRecordId | 检查 record_id
+200 | 1254007 | EmptyValue | 空值
+200 | 1254008 | EmptyView | 空视图
+200 | 1254009 | WrongFieldId | 字段 id 错误
+200 | 1254010 | ReqConvError | 请求错误
+400 | 1254015 | Field types do not match. | 字段类型和值不匹配
+403 | 1254027 | UploadAttachNotAllowed | 附件未挂载, 禁止上传
+200 | 1254030 | TooLargeResponse | 响应体过大
+400 | 1254036 | Base is copying, please try again later. | 复制多维表格为异步操作，该错误码表示当前多维表格仍在复制中，在复制期间无法操作当前多维表格。需要等待复制完成后再操作。
+400 | 1254037 | Invalid client token, make sure that it complies with the specification. | 幂等键格式错误，需要传入 uuidv4 格式
+200 | 1254040 | BaseTokenNotFound | app_token 不存在
+200 | 1254041 | TableIdNotFound | table_id 不存在
+200 | 1254042 | ViewIdNotFound | view_id 不存在
+200 | 1254043 | RecordIdNotFound | record_id 不存在
+200 | 1254044 | FieldIdNotFound | field_id  不存在
+200 | 1254045 | FieldNameNotFound | 字段名称不存在。请检查接口中字段名称和多维表格中的字段名称是否完全匹配。如果难以排查，建议你调用[列出字段](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-field/list)接口获取字段名称，因为根据表格页面的 UI 名称可能会忽略空格、换行或特殊符号等差异。
+200 | 1254060 | TextFieldConvFail | 多行文本字段错误
+200 | 1254061 | NumberFieldConvFail | 数字字段错误
+200 | 1254062 | SingleSelectFieldConvFail | 单选字段错误
+200 | 1254063 | MultiSelectFieldConvFail | 多选字段错误
+200 | 1254064 | DatetimeFieldConvFail | 日期字段错误
+200 | 1254065 | CheckboxFieldConvFail | 复选框字段错误
+200 | 1254066 | UserFieldConvFail | 人员字段有误。原因可能是：<br>- `user_id_type` 参数指定的 ID 类型与传入的 ID 类型不匹配<br>- 传入了不识别的类型或结构，目前只支持填写 `id` 参数，且需要传入数组<br>- 跨应用传入了 `open_id`。如果跨应用传入 ID，建议使用 `user_id`。不同应用获取的 `open_id` 不能交叉使用<br>- 若想对人员字段传空，可传 null
+200 | 1254067 | LinkFieldConvFail | 关联字段错误
+200 | 1254068 | URLFieldConvFail | 超链接字段错误
+200 | 1254069 | AttachFieldConvFail | 附件字段错误
+200 | 1254072 | Failed to convert phone field, please make sure it is correct. | 电话字段错误
+400 | 1254074 | The parameters of Duplex Link field are invalid and need to be filled with an array of string. | 双向关联字段格式非法
+200 | 1254100 | TableExceedLimit | 数据表或仪表盘数量超限。每个多维表格中，数据表加仪表盘的数量最多为 100 个
+200 | 1254101 | ViewExceedLimit | 视图数量超限, 限制200个
+200 | 1254102 | FileExceedLimit | 文件数量超限
+200 | 1254103 | RecordExceedLimit | 记录数量超限, 限制20,000条
+200 | 1254104 | RecordAddOnceExceedLimit | 单次添加记录数量超限, 限制500条
+200 | 1254105 | ColumnExceedLimit | 字段数量超限
+200 | 1254106 | AttachExceedLimit | 附件过多
+200 | 1254130 | TooLargeCell | 格子内容过大
+200 | 1254290 | TooManyRequest | 请求过快，稍后重试
+200 | 1254291 | Write conflict | 同一个数据表(table) 不支持并发调用写接口，请检查是否存在并发调用写接口。写接口包括：新增、修改、删除记录；新增、修改、删除字段；修改表单；修改视图等。
+200 | 1254301 | OperationTypeError | 多维表格未开启高级权限或不支持开启高级权限
+200 | 1254303 | The attachment does not belong to this bitable. | 没有写入附件至多维表格的权限。要在多维表格中写入附件，你需先调用[上传素材](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/drive-v1/media/upload_all)接口，将附件上传到当前多维表格中，再新增记录
+200 | 1255001 | InternalError | 内部错误，请联系[技术支持](https://applink.feishu.cn/TLJpeNdW)
+200 | 1255002 | RpcError | 内部错误，请联系[技术支持](https://applink.feishu.cn/TLJpeNdW)
+200 | 1255003 | MarshalError | 序列化错误，请联系[技术支持](https://applink.feishu.cn/TLJpeNdW)
+200 | 1255004 | UmMarshalError | 反序列化错误
+200 | 1255005 | ConvError | 内部错误，请联系[技术支持](https://applink.feishu.cn/TLJpeNdW)
+400 | 1255006 | Client token conflict, please generate a new client token and try again. | 幂等键冲突，需要重新随机生成一个幂等键
+504 | 1255040 | 请求超时 | 进行重试
+400 | 1254607 | Data not ready, please try again later | 该报错一般是由于前置操作未执行完成，或本次操作数据太大，服务器计算超时导致。遇到该错误码时，建议等待一段时间后重试。通常有以下几种原因：<br>- **编辑操作频繁**：开发者对多维表格的编辑操作非常频繁。可能会导致由于等待前置操作处理完成耗时过长而超时的情况。多维表格底层对数据表的处理基于版本维度的串行方式，不支持并发。因此，并发请求时容易出现此类错误，不建议开发者对单个数据表进行并发请求。<br>- **批量操作负载重**：开发者在多维表格中进行批量新增、删除等操作时，如果数据表的数据量非常大，可能会导致单次请求耗时过长，最终导致请求超时。建议开发者适当降低批量请求的 page_size 以减少请求耗时。<br>- **资源分配与计算开销**：资源分配是基于单文档维度的，如果读接口涉及公式计算、排序等计算逻辑，会占用较多资源。例如，并发读取一个文档下的多个数据表也可能导致该文档阻塞。
+403 | 1254302 | Permission denied. | 调用身份缺少多维表格的高级权限。你需要为调用身份授予高级权限：<br>- 对用户授予高级权限，你需要在多维表格页面右上方 **分享** 入口为当前用户添加可管理权限。![image.png](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/df3911b4f747d75914f35a46962d667d_dAsfLjv3QC.png?height=546&lazyload=true&maxWidth=550)<br>- 对应用授予高级权限，你需通过多维表格页面右上方 **「...」** -> **「...更多」** ->**「添加文档应用」** 入口为应用添加可管理权限。<br>![](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/22c027f63c540592d3ca8f41d48bb107_CSas7OYJBR.png?height=1994&maxWidth=550&width=3278)<br>![image.png](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/9f3353931fafeea16a39f0eb887db175_0tjzC9P3zU.png?maxWidth=550)<br>**注意**：<br>在 **添加文档应用** 前，你需确保目标应用至少开通了一个多维表格的 [API 权限](https://open.feishu.cn/document/ukTMukTMukTM/uYTM5UjL2ETO14iNxkTN/scope-list)。否则你将无法在文档应用窗口搜索到目标应用。    <br>- 你也可以在 **多维表格高级权限设置** 中添加用户或一个包含应用的群组, 给予这个群自定义的读写等权限。
+403 | 1254304 | Permission denied. | 调用身份缺少高级权限。调用身份需拥有多维表格的可管理权限。了解更多，参考[如何为应用或用户开通文档权限](https://open.feishu.cn/document/ukTMukTMukTM/uczNzUjL3czM14yN3MTN#16c6475a)。
+403 | 1254306 | The tenant or base owner is subject to base plan limits. | 联系租户管理员申请权益
+403 | 1254608 | Same API requests are submitted repeatedly. | 基于同一个多维表格版本重复提交了更新请求，常见于并发或时间间隔极短的请求，例如并发将一个视图的信息更新为相同的内容。建议稍后重试
+
+# 更新记录
+
+更新多维表格数据表中的一条记录。
+
+## 前提条件
+
+调用此接口前，请确保当前调用身份（tenant_access_token 或 user_access_token）已有多维表格的编辑等文档权限，否则接口将返回 HTTP 403 或 400 状态码。了解更多，参考[如何为应用或用户开通文档权限](https://open.feishu.cn/document/ukTMukTMukTM/uczNzUjL3czM14yN3MTN#16c6475a)。
+
+## 注意事项
+
+- 从其它数据源同步的数据表，不支持对记录进行增加、删除、和修改操作。
+- 更新记录为增量更新，仅更新传入的字段。如果想对记录中的某个字段值置空，可将字段设为 null，例如：
+```json
+{
+  "fields": {
+    "文本字段": null
+  }
+}
+```
+
+## 请求
+
+基本 | 
+---|---
+HTTP URL | https://open.feishu.cn/open-apis/bitable/v1/apps/:app_token/tables/:table_id/records/:record_id
+HTTP Method | PUT
+接口频率限制 | [50 次/秒](https://open.feishu.cn/document/ukTMukTMukTM/uUzN04SN3QjL1cDN)
+支持的应用类型 | Custom App、Store App
+权限要求<br>**调用该 API 所需的权限。开启其中任意一项权限即可调用**<br>开启任一权限即可 | 更新记录(base:record:update)<br>查看、评论、编辑和管理多维表格(bitable:app)
+字段权限要求 | **注意事项**：该接口返回体中存在下列敏感字段，仅当开启对应的权限后才会返回；如果无需获取这些字段，则不建议申请<br>获取用户基本信息(contact:user.base:readonly)<br>获取用户 user ID(contact:user.employee_id:readonly)<br>以应用身份访问通讯录(contact:contact:access_as_app)<br>读取通讯录(contact:contact:readonly)<br>以应用身份读取通讯录(contact:contact:readonly_as_app)
+
+### 请求头
+
+名称 | 类型 | 必填 | 描述
+---|---|---|---
+Authorization | string | 是 | `tenant_access_token`<br>或<br>`user_access_token`<br>**值格式**："Bearer `access_token`"<br>**示例值**："Bearer u-7f1bcd13fc57d46bac21793a18e560"<br>[了解更多：如何选择与获取 access token](https://open.feishu.cn/document/uAjLw4CM/ugTN1YjL4UTN24CO1UjN/trouble-shooting/how-to-choose-which-type-of-token-to-use)
+Content-Type | string | 是 | **固定值**："application/json; charset=utf-8"
+
+### 路径参数
+
+名称 | 类型 | 描述
+---|---|---
+app_token | string | 多维表格 App 的唯一标识。不同形态的多维表格，其 app_token 的获取方式不同：<br>- 如果多维表格的 URL 以 ==**feishu.cn/base**== 开头，该多维表格的 app_token 是下图高亮部分：<br>![app_token.png](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/6916f8cfac4045ba6585b90e3afdfb0a_GxbfkJHZBa.png?height=766&lazyload=true&width=3004)<br>- 如果多维表格的 URL 以 ==**feishu.cn/wiki**== 开头，你需调用知识库相关[获取知识空间节点信息](https://open.feishu.cn/document/ukTMukTMukTM/uUDN04SN0QjL1QDN/wiki-v2/space/get_node)接口获取多维表格的 app_token。当 obj_type 的值为 bitable 时，obj_token 字段的值才是多维表格的 app_token。<br>了解更多，参考[多维表格 app_token 获取方式](https://open.feishu.cn/document/ukTMukTMukTM/uUDN04SN0QjL1QDN/bitable-overview#-752212c)。<br>**示例值**："appbcbWCzen6D8dezhoCH2RpMAh"
+table_id | string | 多维表格数据表的唯一标识。获取方式：<br>- 你可通过多维表格 URL 获取 `table_id`，下图高亮部分即为当前数据表的 `table_id`<br>- 也可通过[列出数据表](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table/list)接口获取 `table_id`<br>![](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/18741fe2a0d3cafafaf9949b263bb57d_yD1wkOrSju.png?height=746&lazyload=true&maxWidth=700&width=2976)<br>**示例值**："tblsRc9GRRXKqhvW"
+record_id | string | 数据表中一条记录的唯一标识。通过[查询记录](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-record/search)接口获取。<br>**示例值**："recqwIwhc6"
+
+### 查询参数
+
+名称 | 类型 | 必填 | 描述
+---|---|---|---
+user_id_type | string | 否 | 用户 ID 类型<br>**示例值**：open_id<br>**可选值有**：<br>- open_id：标识一个用户在某个应用中的身份。同一个用户在不同应用中的 Open ID 不同。[了解更多：如何获取 Open ID](https://open.feishu.cn/document/uAjLw4CM/ugTN1YjL4UTN24CO1UjN/trouble-shooting/how-to-obtain-openid)<br>- union_id：标识一个用户在某个应用开发商下的身份。同一用户在同一开发商下的应用中的 Union ID 是相同的，在不同开发商下的应用中的 Union ID 是不同的。通过 Union ID，应用开发商可以把同个用户在多个应用中的身份关联起来。[了解更多：如何获取 Union ID？](https://open.feishu.cn/document/uAjLw4CM/ugTN1YjL4UTN24CO1UjN/trouble-shooting/how-to-obtain-union-id)<br>- user_id：标识一个用户在某个租户内的身份。同一个用户在租户 A 和租户 B 内的 User ID 是不同的。在同一个租户内，一个用户的 User ID 在所有应用（包括商店应用）中都保持一致。User ID 主要用于在不同的应用间打通用户数据。[了解更多：如何获取 User ID？](https://open.feishu.cn/document/uAjLw4CM/ugTN1YjL4UTN24CO1UjN/trouble-shooting/how-to-obtain-user-id)<br>**默认值**：`open_id`<br>**当值为 `user_id`，字段权限要求**：<br>获取用户 user ID(contact:user.employee_id:readonly)
+ignore_consistency_check | boolean | 否 | 是否忽略一致性读写检查，默认为 false，即在进行读写操作时，系统将确保读取到的数据和写入的数据是一致的。可选值：<br>- true：忽略读写一致性检查，提高性能，但可能会导致某些节点的数据不同步，出现暂时不一致<br>- false：开启读写一致性检查，确保数据在读写过程中一致<br>**示例值**：true
+
+### 请求体
+
+名称 | 类型 | 必填 | 描述
+---|---|---|---
+fields | map&lt;string, union&gt; | 是 | 要更新的记录的数据。你需先指定数据表中的字段（即指定列），再传入正确格式的数据作为一条记录。<br>**注意**：<br>该接口支持的字段类型及其描述如下所示：<br>- 文本：原值展示，不支持 markdown 语法<br>- 数字：填写数字格式的值<br>- 单选：填写选项值，对于新的选项值，将会创建一个新的选项<br>- 多选：填写多个选项值，对于新的选项值，将会创建一个新的选项。如果填写多个相同的新选项值，将会创建多个相同的选项<br>- 日期：填写毫秒级时间戳<br>- 复选框：填写 true 或 false<br>- 条码<br>- 人员：填写用户的 open_id、union_id 或 user_id，类型需要与 user_id_type 指定的类型一致<br>- 电话号码：填写文本内容<br>- 超链接：参考以下示例，text 为文本值，link 为 URL 链接<br>- 附件：填写附件 token，需要先调用[上传素材](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/drive-v1/media/upload_all)或[分片上传素材](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/drive-v1/media/upload_prepare)接口将附件上传至该多维表格中<br>- 单向关联：填写被关联表的记录 ID<br>- 双向关联：填写被关联表的记录 ID<br>- 地理位置：填写经纬度坐标<br>不同类型字段的数据结构请参考[数据结构概述](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/bitable/development-guide/bitable-structure)。<br>**示例值**：{"文本":"HelloWorld"}
+
+### 请求体示例
+```json
+{
+    "fields": {
+        "索引": "索引列文本类型",
+        "文本": "文本内容",
+        "条码":"qawqe",
+        "数字": 100,
+        "单选": "选项3",
+        "多选": [
+            "选项1",
+            "选项2"
+        ],
+        "货币":3,
+        "评分":3,
+        "进度":0.25,
+        "日期": 1674206443000,
+        "复选框": true,
+        "人员": [
+            {
+                "id": "ou_2910013f1e6456f16a0ce75ede950a0a"
+            },
+            {
+                "id": "ou_e04138c9633dd0d2ea166d79f548ab5d"
+            }
+        ],
+        "群组":[
+            {
+                "id": "oc_cd07f55f14d6f4a4f1b51504e7e97f48"
+            }
+        ],
+        "电话号码": "13026162666",
+        "超链接": {
+            "text": "飞书多维表格官网",
+            "link": "https://www.feishu.cn/product/base"
+        },
+        "附件": [
+            {
+                "file_token": "Vl3FbVkvnowlgpxpqsAbBrtFcrd"
+            }
+        ],
+        "单向关联": [
+            "recHTLvO7x",
+            "recbS8zb2m"
+        ],
+        "双向关联": [
+            "recHTLvO7x",
+            "recbS8zb2m"
+        ],
+        "地理位置": "116.397755,39.903179"
+    }
+}
+```
+
+## 响应
+
+### 响应体
+
+名称 | 类型 | 描述
+---|---|---
+code | int | 错误码，非 0 表示失败
+msg | string | 错误描述
+data | \- | \-
+record | app.table.record | 记录更新后的内容
+fields | map&lt;string, union&gt; | 成功更新的记录的数据
+record_id | string | 更新记录的 ID
+created_by | person | 该记录的创建人。本接口不返回该参数
+id | string | 用户 ID，ID 类型与 `user_id_type` 所指定的类型一致
+name | string | 用户的中文名称
+en_name | string | 用户的英文名称
+email | string | 用户的邮箱
+avatar_url | string | 头像链接<br>**字段权限要求（满足任一）**：<br>获取用户基本信息(contact:user.base:readonly)<br>以应用身份访问通讯录(contact:contact:access_as_app)<br>读取通讯录(contact:contact:readonly)<br>以应用身份读取通讯录(contact:contact:readonly_as_app)
+created_time | int | 该记录的创建时间。本接口不返回该参数
+last_modified_by | person | 该记录最新一次更新的修改人。本接口不返回该参数
+id | string | 用户 ID，ID 类型与 `user_id_type` 所指定的类型一致
+name | string | 用户的中文名称
+en_name | string | 用户的英文名称
+email | string | 用户的邮箱
+avatar_url | string | 头像链接<br>**字段权限要求（满足任一）**：<br>获取用户基本信息(contact:user.base:readonly)<br>以应用身份访问通讯录(contact:contact:access_as_app)<br>读取通讯录(contact:contact:readonly)<br>以应用身份读取通讯录(contact:contact:readonly_as_app)
+last_modified_time | int | 该记录最近一次的更新时间。本接口不返回该参数
+shared_url | string | 记录分享链接。本接口不返回该参数，批量获取记录接口将返回该参数
+record_url | string | 记录链接，本接口不返回该参数，查询记录接口将返回该参数
+
+### 响应体示例
+```json
+{
+    "code": 0,
+    "data": {
+        "record": {
+            "fields": {
+                "人员": [
+                    {
+                        "id": "ou_2910013f1e6456f16a0ce75ede950a0a"
+                    },
+                    {
+                        "id": "ou_e04138c9633dd0d2ea166d79f548ab5d"
+                    }
+                ],
+                "群组": [
+                    {
+                        "id": "oc_cd07f55f14d6f4a4f1b51504e7e97f48"
+                    }
+                ],
+                "单向关联": [
+                    "recHTLvO7x",
+                    "recbS8zb2m"
+                ],
+                "单选": "选项3",
+                "双向关联": [
+                    "recHTLvO7x",
+                    "recbS8zb2m"
+                ],
+                "地理位置": "116.397755,39.903179",
+                "复选框": true,
+                "多行文本": "多行文本内容",
+                "多选": [
+                    "选项1",
+                    "选项2"
+                ],
+                "数字": 100,
+                "日期": 1674206443000,
+                "条码": "qawqe",
+                "电话号码": "13026162666",
+                "索引": "索引列多行文本类型",
+                "超链接": {
+                    "link": "https://www.feishu.cn/product/base",
+                    "text": "飞书多维表格官网"
+                },
+                "附件": [
+                    {
+                        "file_token": "Vl3FbVkvnowlgpxpqsAbBrtFcrd"
+                    }
+                ],
+                "评分": 3,
+                "货币": 3,
+                "进度": 0.25
+            },
+            "id": "reclAqylTN",
+            "record_id": "reclAqylTN"
+        }
+    },
+    "msg": "success"
+}
+```
+
+### 错误码
+
+HTTP状态码 | 错误码 | 描述 | 排查建议
+---|---|---|---
+200 | 1254000 | WrongRequestJson | 请求体错误
+200 | 1254001 | WrongRequestBody | 请求体错误
+200 | 1254002 | Fail | 内部错误，请联系[技术支持](https://applink.feishu.cn/TLJpeNdW)
+200 | 1254003 | WrongBaseToken | app_token 错误
+200 | 1254004 | WrongTableId | table_id 错误
+200 | 1254005 | WrongViewId | view_id 错误
+200 | 1254006 | WrongRecordId | 检查 record_id
+200 | 1254007 | EmptyValue | 空值
+200 | 1254008 | EmptyView | 空视图
+200 | 1254009 | WrongFieldId | 字段 id 错误
+200 | 1254010 | ReqConvError | 请求错误
+400 | 1254015 | Field types do not match. | 字段类型不匹配，请检查传入的记录内容是否符合对应字段类型的格式要求
+403 | 1254027 | UploadAttachNotAllowed | 附件未挂载, 禁止上传
+200 | 1254030 | TooLargeResponse | 响应体过大
+400 | 1254036 | Base is copying, please try again later. | 多维表格副本复制中，稍后重试
+200 | 1254040 | BaseTokenNotFound | app_token 不存在
+200 | 1254041 | TableIdNotFound | table_id 不存在
+200 | 1254042 | ViewIdNotFound | view_id 不存在
+200 | 1254043 | RecordIdNotFound | record_id 不存在
+200 | 1254044 | FieldIdNotFound | field_id  不存在
+200 | 1254045 | FieldNameNotFound | 字段名字不存在
+200 | 1254060 | TextFieldConvFail | 多行文本字段错误
+200 | 1254061 | NumberFieldConvFail | 数字字段错误
+200 | 1254062 | SingleSelectFieldConvFail | 单选字段错误，出现这个错误的两种情况为：<br>- 单选字段的值类型不是字符串 string<br>- 单选字段设置的关联选项不支持更新
+200 | 1254063 | MultiSelectFieldConvFail | 多选字段错误，出现这个错误的两种情况为：<br>- 多选字段的值类型不是字符串 string<br>- 多选字段设置的关联选项不支持更新
+200 | 1254064 | DatetimeFieldConvFail | 日期字段错误
+200 | 1254065 | CheckboxFieldConvFail | 复选框字段错误
+200 | 1254066 | UserFieldConvFail | 人员字段有误。原因可能是：<br>- `user_id_type` 参数指定的 ID 类型与传入的 ID 类型不匹配<br>- 传入了不识别的类型或结构，目前只支持填写 `id` 参数，且需要传入数组<br>- 跨应用传入了 `open_id`。如果跨应用传入 ID，建议使用 `user_id`。不同应用获取的 `open_id` 不能交叉使用
+200 | 1254067 | LinkFieldConvFail | 关联字段错误
+200 | 1254068 | URLFieldConvFail | 超链接字段错误
+200 | 1254069 | AttachFieldConvFail | 附件字段错误
+200 | 1254072 | InvalidPhoneNumber | 转换手机号码格式失败，请检查传入的手机号码格式是否正确
+400 | 1254074 | DuplexLinkFieldConvFail | 参数无效，需要使用字符串数组
+200 | 1254100 | TableExceedLimit | 数据表或仪表盘数量超限。每个多维表格中，数据表加仪表盘的数量最多为 100 个
+200 | 1254101 | ViewExceedLimit | 视图数量超限, 限制200个
+200 | 1254102 | FileExceedLimit | 文件数量超限
+200 | 1254103 | RecordExceedLimit | 记录数量超限, 限制20,000条
+200 | 1254104 | RecordAddOnceExceedLimit | 单次添加记录数量超限, 限制500条
+200 | 1254105 | ColumnExceedLimit | 字段数量超限
+200 | 1254106 | AttachExceedLimit | 附件过多
+200 | 1254112 | TooManyRequestInSingleBase | /
+200 | 1254130 | TooLargeCell | 格子内容过大
+200 | 1254290 | TooManyRequest | 请求过快，稍后重试
+200 | 1254291 | Write conflict | 同一个数据表(table) 不支持并发调用写接口，请检查是否存在并发调用写接口。写接口包括：新增、修改、删除记录；新增、修改、删除字段；修改表单；修改视图等。
+200 | 1254301 | OperationTypeError | 多维表格未开启高级权限或不支持开启高级权限
+200 | 1254303 | The attachment does not belong to this base. | 附件无权限
+200 | 1255001 | InternalError | 内部错误，请联系[技术支持](https://applink.feishu.cn/TLJpeNdW)
+200 | 1255002 | RpcError | 内部错误，请联系[技术支持](https://applink.feishu.cn/TLJpeNdW)
+200 | 1255003 | MarshalError | 序列化错误，请联系[技术支持](https://applink.feishu.cn/TLJpeNdW)
+200 | 1255004 | UmMarshalError | 反序列化错误
+200 | 1255005 | ConvError | 内部错误，请联系[技术支持](https://applink.feishu.cn/TLJpeNdW)
+504 | 1255040 | Request timed out, please try again later. | 请求超时，请进行重试
+400 | 1254607 | Data not ready, please try again later | 该报错一般是由于前置操作未执行完成，或本次操作数据太大，服务器计算超时导致。遇到该错误码时，建议等待一段时间后重试。通常有以下几种原因：<br>- **编辑操作频繁**：开发者对多维表格的编辑操作非常频繁。可能会导致由于等待前置操作处理完成耗时过长而超时的情况。多维表格底层对数据表的处理基于版本维度的串行方式，不支持并发。因此，并发请求时容易出现此类错误，不建议开发者对单个数据表进行并发请求。<br>- **批量操作负载重**：开发者在多维表格中进行批量新增、删除等操作时，如果数据表的数据量非常大，可能会导致单次请求耗时过长，最终导致请求超时。建议开发者适当降低批量请求的 page_size 以减少请求耗时。<br>- **资源分配与计算开销**：资源分配是基于单文档维度的，如果读接口涉及公式计算、排序等计算逻辑，会占用较多资源。例如，并发读取一个文档下的多个数据表也可能导致该文档阻塞。
+403 | 1254302 | Permission denied. | 无访问权限，常由表格开启了高级权限造成。请确保当前调用身份具有高级权限或多维表格的管理权限：<br>- 对于应用身份，你需要通过云文档网页页面右上方 「**...**」->「**...更多**」-> 「**添加文档应用**」入口添加并授予应用可管理权限，或在高级权限设置中添加一个包含应用的群组，给予这个群读写权限<br>- 对于用户身份，你需要通过云文档网页的「**分享**」入口授予用户管理权限<br>了解更多，参考[如何为应用或用户开通云文档权限](https://open.feishu.cn/document/ukTMukTMukTM/uczNzUjL3czM14yN3MTN#16c6475a)。
+403 | 1254304 | Permission denied. | 权限不足。请检查多维表格是否开启了高级权限，如果开启高级权限，调用身份需要有多维表格的可管理权限。详情参考[如何为应用或用户开通文档权限](https://open.feishu.cn/document/ukTMukTMukTM/uczNzUjL3czM14yN3MTN#16c6475a)
+403 | 1254608 | ReqRecommited | 请求重复，请检查本次请求的请求参数和上一次是否完全相同
+
+# 查询记录
+
+该接口用于查询数据表中的现有记录，单次最多查询 500 行记录，支持分页获取。
+
+## 注意事项
+
+若多维表格开启了高级权限，你需确保调用身份拥有多维表格的可管理权限，否则可能出现调用成功但返回数据为空的情况。了解具体步骤，参考[如何为应用或用户开通文档权限](https://open.feishu.cn/document/ukTMukTMukTM/uczNzUjL3czM14yN3MTN#16c6475a)。
+
+## 请求
+
+基本 | 
+---|---
+HTTP URL | https://open.feishu.cn/open-apis/bitable/v1/apps/:app_token/tables/:table_id/records/search
+HTTP Method | POST
+接口频率限制 | [20 次/秒](https://open.feishu.cn/document/ukTMukTMukTM/uUzN04SN3QjL1cDN)
+支持的应用类型 | Custom App、Store App
+权限要求<br>**调用该 API 所需的权限。开启其中任意一项权限即可调用**<br>开启任一权限即可 | 根据条件搜索记录(base:record:retrieve)<br>查看、评论、编辑和管理多维表格(bitable:app)<br>查看、评论和导出多维表格(bitable:app:readonly)
+字段权限要求 | **注意事项**：该接口返回体中存在下列敏感字段，仅当开启对应的权限后才会返回；如果无需获取这些字段，则不建议申请<br>获取用户基本信息(contact:user.base:readonly)<br>获取用户 user ID(contact:user.employee_id:readonly)<br>以应用身份访问通讯录(contact:contact:access_as_app)<br>读取通讯录(contact:contact:readonly)<br>以应用身份读取通讯录(contact:contact:readonly_as_app)
+
+### 请求头
+
+名称 | 类型 | 必填 | 描述
+---|---|---|---
+Authorization | string | 是 | `tenant_access_token`<br>或<br>`user_access_token`<br>**值格式**："Bearer `access_token`"<br>**示例值**："Bearer u-7f1bcd13fc57d46bac21793a18e560"<br>[了解更多：如何选择与获取 access token](https://open.feishu.cn/document/uAjLw4CM/ugTN1YjL4UTN24CO1UjN/trouble-shooting/how-to-choose-which-type-of-token-to-use)
+Content-Type | string | 是 | **固定值**："application/json; charset=utf-8"
+
+### 路径参数
+
+名称 | 类型 | 描述
+---|---|---
+app_token | string | 多维表格 App 的唯一标识。不同形态的多维表格，其 app_token 的获取方式不同：<br>- 如果多维表格的 URL 以 ==**feishu.cn/base**== 开头，该多维表格的 app_token 是下图高亮部分：<br>![app_token.png](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/6916f8cfac4045ba6585b90e3afdfb0a_GxbfkJHZBa.png?height=766&lazyload=true&width=3004)<br>- 如果多维表格的 URL 以 ==**feishu.cn/wiki**== 开头，你需调用知识库相关[获取知识空间节点信息](https://open.feishu.cn/document/ukTMukTMukTM/uUDN04SN0QjL1QDN/wiki-v2/space/get_node)接口获取多维表格的 app_token。当 obj_type 的值为 bitable 时，obj_token 字段的值才是多维表格的 app_token。<br>了解更多，参考[多维表格 app_token 获取方式](https://open.feishu.cn/document/ukTMukTMukTM/uUDN04SN0QjL1QDN/bitable-overview#-752212c)。<br>**示例值**："NQRxbRkBMa6OnZsjtERcxhNWnNh"<br>**数据校验规则**：<br>- 长度范围：`0` ～ `100` 字符
+table_id | string | 多维表格数据表的唯一标识。获取方式：<br>- 你可通过多维表格 URL 获取 `table_id`，下图高亮部分即为当前数据表的 `table_id`<br>- 也可通过[列出数据表](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table/list)接口获取 `table_id`<br>![](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/18741fe2a0d3cafafaf9949b263bb57d_yD1wkOrSju.png?height=746&lazyload=true&maxWidth=700&width=2976)<br>**示例值**："tbl0xe5g8PP3U3cS"<br>**数据校验规则**：<br>- 长度范围：`0` ～ `50` 字符
+
+### 查询参数
+
+名称 | 类型 | 必填 | 描述
+---|---|---|---
+user_id_type | string | 否 | 用户 ID 类型<br>**示例值**：open_id<br>**可选值有**：<br>- open_id：标识一个用户在某个应用中的身份。同一个用户在不同应用中的 Open ID 不同。[了解更多：如何获取 Open ID](https://open.feishu.cn/document/uAjLw4CM/ugTN1YjL4UTN24CO1UjN/trouble-shooting/how-to-obtain-openid)<br>- union_id：标识一个用户在某个应用开发商下的身份。同一用户在同一开发商下的应用中的 Union ID 是相同的，在不同开发商下的应用中的 Union ID 是不同的。通过 Union ID，应用开发商可以把同个用户在多个应用中的身份关联起来。[了解更多：如何获取 Union ID？](https://open.feishu.cn/document/uAjLw4CM/ugTN1YjL4UTN24CO1UjN/trouble-shooting/how-to-obtain-union-id)<br>- user_id：标识一个用户在某个租户内的身份。同一个用户在租户 A 和租户 B 内的 User ID 是不同的。在同一个租户内，一个用户的 User ID 在所有应用（包括商店应用）中都保持一致。User ID 主要用于在不同的应用间打通用户数据。[了解更多：如何获取 User ID？](https://open.feishu.cn/document/uAjLw4CM/ugTN1YjL4UTN24CO1UjN/trouble-shooting/how-to-obtain-user-id)<br>**默认值**：`open_id`<br>**当值为 `user_id`，字段权限要求**：<br>获取用户 user ID(contact:user.employee_id:readonly)
+page_token | string | 否 | 分页标记，第一次请求不填，表示从头开始遍历；分页查询结果还有更多项时会同时返回新的 page_token，下次遍历可采用该 page_token 获取查询结果<br>**示例值**：eVQrYzJBNDNONlk4VFZBZVlSdzlKdFJ4bVVHVExENDNKVHoxaVdiVnViQT0=
+page_size | int | 否 | 分页大小。最大值为 500<br>**示例值**：10<br>**默认值**：`20`
+
+### 请求体
+
+名称 | 类型 | 必填 | 描述
+---|---|---|---
+view_id | string | 否 | 多维表格中视图的唯一标识。获取方式：<br>- 在多维表格的 URL 地址栏中，view_id 是下图中高亮部分：<br>![view_id.png](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/140668632c97e0095832219001d17c54_DJMgVH9x2S.png?height=748&lazyload=true&width=2998)<br>- 通过[列出视图](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-view/list)接口获取。暂时无法获取到嵌入到云文档中的多维表格的 view_id。<br>**注意**：<br>当 filter 参数 或 sort 参数不为空时，请求视为对数据表中的全部数据做条件过滤，指定的 view_id 会被忽略。<br>**示例值**："vewqhz51lk"<br>**数据校验规则**：<br>- 长度范围：`0` ～ `50` 字符
+field_names | string\[\] | 否 | 字段名称，用于指定本次查询返回记录中包含的字段<br>**示例值**：["字段1","字段2"]<br>**数据校验规则**：<br>- 长度范围：`0` ～ `200`
+sort | sort\[\] | 否 | 排序条件<br>**数据校验规则**：<br>- 长度范围：`0` ～ `100`
+field_name | string | 否 | 字段名称<br>**示例值**："多行文本"<br>**数据校验规则**：<br>- 长度范围：`0` ～ `1000` 字符
+desc | boolean | 否 | 是否倒序排序<br>**示例值**：true<br>**默认值**：`false`
+filter | filter_info | 否 | 包含条件筛选信息的对象。了解 filter 填写指南和使用示例（如怎样同时使用 `and` 和 `or` 逻辑链接词），参考[记录筛选参数填写指南](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-record/record-filter-guide)。
+conjunction | string | 否 | 表示条件之间的逻辑连接词，该字段必填，请忽略左侧必填列的否<br>**示例值**："and"<br>**可选值有**：<br>- and：满足全部条件<br>- or：满足任一条件<br>**数据校验规则**：<br>- 长度范围：`0` ～ `10` 字符
+conditions | condition\[\] | 否 | 筛选条件集合<br>**数据校验规则**：<br>- 长度范围：`0` ～ `50`
+field_name | string | 是 | 筛选条件的左值，值为字段的名称<br>**示例值**："字段1"<br>**数据校验规则**：<br>- 长度范围：`0` ～ `1000` 字符
+operator | string | 是 | 条件运算符<br>**示例值**："is"<br>**可选值有**：<br>- is：等于<br>- isNot：不等于（不支持日期字段，了解如何查询日期字段，参考[日期字段填写说明](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-record/record-filter-guide#29d9dc89)）<br>- contains：包含（不支持日期字段）<br>- doesNotContain：不包含（不支持日期字段）<br>- isEmpty：为空<br>- isNotEmpty：不为空<br>- isGreater：大于<br>- isGreaterEqual：大于等于（不支持日期字段）<br>- isLess：小于<br>- isLessEqual：小于等于（不支持日期字段）<br>- like：LIKE 运算符。暂未支持<br>- in：IN 运算符。暂未支持
+value | string\[\] | 否 | 条件的值，可以是单个值或多个值的数组。不同字段类型和不同的 operator 可填的值不同。详情参考[字段目标值（value）填写说明](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-record/record-filter-guide#3e0fd644)。<br>**示例值**：["文本内容"]<br>**数据校验规则**：<br>- 长度范围：`0` ～ `10`
+automatic_fields | boolean | 否 | 是否自动计算并返回创建时间（created_time）、修改时间（last_modified_time）、创建人（created_by）、修改人（last_modified_by）这四类字段。默认为 false，表示不返回。<br>**示例值**：false
+
+### 请求体示例
+```json
+{
+  "view_id": "vewqhz51lk",
+  "field_names": [
+    "字段1",
+    "字段2"
+  ],
+  "sort": [
+    {
+      "field_name": "多行文本",
+      "desc": true
+    }
+  ],
+  "filter": {
+    "conjunction": "and",
+    "conditions": [
+      {
+        "field_name": "职位",
+        "operator": "is",
+        "value": [
+          "初级销售员"
+        ]
+      },
+      {
+        "field_name": "销售额",
+        "operator": "isGreater",
+        "value": [
+          "10000.0"
+        ]
+      }
+    ]
+  },
+  "automatic_fields": false
+}
+```
+
+## 响应
+
+### 响应体
+
+名称 | 类型 | 描述
+---|---|---
+code | int | 错误码，非 0 表示失败
+msg | string | 错误描述
+data | \- | \-
+items | app.table.record\[\] | 数组类型。record 结果。了解 record 数据结构，参考[数据结构](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/bitable/development-guide/bitable-structure)。
+fields | map&lt;string, union&gt; | 记录字段
+record_id | string | 记录 ID
+created_by | person | 创建人
+id | string | 人员 ID。与查询参数 user_id_type 指定的类型一致。
+name | string | 中文姓名
+en_name | string | 英文姓名
+email | string | 邮箱
+avatar_url | string | 头像链接<br>**字段权限要求（满足任一）**：<br>获取用户基本信息(contact:user.base:readonly)<br>以应用身份访问通讯录(contact:contact:access_as_app)<br>读取通讯录(contact:contact:readonly)<br>以应用身份读取通讯录(contact:contact:readonly_as_app)
+created_time | int | 创建时间
+last_modified_by | person | 修改人
+id | string | 人员 ID。与查询参数 user_id_type 指定的类型一致。
+name | string | 中文姓名
+en_name | string | 英文姓名
+email | string | 邮箱
+avatar_url | string | 头像链接<br>**字段权限要求（满足任一）**：<br>获取用户基本信息(contact:user.base:readonly)<br>以应用身份访问通讯录(contact:contact:access_as_app)<br>读取通讯录(contact:contact:readonly)<br>以应用身份读取通讯录(contact:contact:readonly_as_app)
+last_modified_time | int | 最近更新时间
+shared_url | string | 记录分享链接(批量获取记录接口将返回该字段)
+record_url | string | 记录链接(检索记录接口将返回该字段)
+has_more | boolean | 是否还有更多项
+page_token | string | 分页标记，当 has_more 为 true 时，会同时返回新的 page_token，否则不返回 page_token
+total | int | 记录总数
+
+### 响应体示例
+```json
+{
+    "code":0,
+    "data":{
+        "has_more":false,
+        "items":[
+            {
+                "created_by":{
+                    "avatar_url":"https://internal-api-lark-file.feishu.cn/static-resource/v1/06d568cb-f464-4c2e-bd03-76512c545c5j~?image_size=72x72&amp;cut_type=default-face&amp;quality=&amp;format=jpeg&amp;sticker_format=.webp",
+                    "email":"",
+                    "en_name":"测试1",
+                    "id":"ou_92945f86a98bba075174776959c90eda",
+                    "name":"测试1"
+                },
+                "created_time":1691049973000,
+                "fields":{
+                    "人员":[
+                        {
+                            "avatar_url":"https://internal-api-lark-file.feishu.cn/static-resource/v1/b2-7619-4b8a-b27b-c72d90b06a2j~?image_size=72x72&amp;cut_type=default-face&amp;quality=&amp;format=jpeg&amp;sticker_format=.webp",
+                            "email":"zhangsan.leben@bytedance.com",
+                            "en_name":"ZhangSan",
+                            "id":"ou_2910013f1e6456f16a0ce75ede950a0a",
+                            "name":"张三"
+                        },
+                        {
+                            "avatar_url":"https://internal-api-lark-file.feishu.cn/static-resource/v1/v2_q86-fcb6-4f18-85c7-87ca8881e50j~?image_size=72x72&amp;cut_type=default-face&amp;quality=&amp;format=jpeg&amp;sticker_format=.webp",
+                            "email":"lisi.00@bytedance.com",
+                            "en_name":"LiSi",
+                            "id":"ou_e04138c9633dd0d2ea166d79f548ab5d",
+                            "name":"李四"
+                        }
+                    ],
+                    "修改人":[
+                        {
+                            "avatar_url":"https://internal-api-lark-file.feishu.cn/static-resource/v1/06d568cb-f464-4c2e-bd03-76512c545c5j~?image_size=72x72&amp;cut_type=default-face&amp;quality=&amp;format=jpeg&amp;sticker_format=.webp",
+                            "email":"",
+                            "en_name":"测试1",
+                            "id":"ou_92945f86a98bba075174776959c90eda",
+                            "name":"测试1"
+                        }
+                    ],
+                    "创建人":[
+                        {
+                            "avatar_url":"https://internal-api-lark-file.feishu.cn/static-resource/v1/06d568cb-f464-4c2e-bd03-76512c545c5j~?image_size=72x72&amp;cut_type=default-face&amp;quality=&amp;format=jpeg&amp;sticker_format=.webp",
+                            "email":"",
+                            "en_name":"测试1",
+                            "id":"ou_92945f86a98bba075174776959c90eda",
+                            "name":"测试1"
+                        }
+                    ],
+                    "创建时间":1691049973000,
+                    "单向关联":{
+                        "link_record_ids":[
+                            "recnVYsuqV"
+                        ]
+                    },
+                    "单选":"选项1",
+                    "双向关联":{
+                        "link_record_ids":[
+                            "recqLvMaXT",
+                            "recrdld32q"
+                        ]
+                    },
+                    "地理位置":{
+                        "address":"东长安街",
+                        "adname":"东城区",
+                        "cityname":"北京市",
+                        "full_address":"天安门广场，北京市东城区东长安街",
+                        "location":"116.397755,39.903179",
+                        "name":"天安门广场",
+                        "pname":"北京市"
+                    },
+                    "复选框":true,
+                    "多行文本":[
+                        {
+                            "text":"多行文本内容1",
+                            "type":"text"
+                        },
+                        {
+                            "mentionNotify":false,
+                            "mentionType":"User",
+                            "name":"张三",
+                            "text":"@张三",
+                            "token":"ou_2910013f1e6456f16a0ce75ede950a0a",
+                            "type":"mention"
+                        }
+                    ],
+                    "多选":[
+                        "选项1",
+                        "选项2"
+                    ],
+                    "数字":2323.2323,
+                    "日期":1690992000000,
+                    "最后更新时间":1702455191000,
+                    "条码":[
+                        {
+                            "text":"123",
+                            "type":"text"
+                        }
+                    ],
+                    "电话号码":"131xxxx6666",
+                    "自动编号":"17",
+                    "群组":[
+                        {
+                            "avatar_url":"https://internal-api-lark-file.feishu-boe.cn/static-resource/v1/v2_c8d2cd50-ba29-476f-b7f1-5b5917cb18ej~?image_size=72x72&amp;cut_type=&amp;quality=&amp;format=jpeg&amp;sticker_format=.webp",
+                            "id":"oc_cd07f55f14d6f4a4f1b51504e7e97f48",
+                            "name":"武侠聊天组"
+                        }
+                    ],
+                    "评分":3,
+                    "货币":1,
+                    "超链接":{
+                        "link":"https://bitable.feishu.cn",
+                        "text":"飞书多维表格官网"
+                    },
+                    "进度":0.66,
+                    "附件":[
+                        {
+                            "file_token":"Vl3FbVkvnowlgpxpqsAbBrtFcrd",
+                            "name":"飞书.jpeg",
+                            "size":32975,
+                            "tmp_url":"https://open.feishu.cn/open-apis/drive/v1/medias/batch_get_tmp_download_url?file_tokens=Vl3FbVk11owlgpxpqsAbBrtFcrd&amp;extra=%7B%22bitablePerm%22%3A%7B%22tableId%22%3A%22tblBJyX6jZteblYv%22%2C%22rev%22%3A90%7D%7D",
+                            "type":"image/jpeg",
+                            "url":"https://open.feishu.cn/open-apis/drive/v1/medias/Vl3FbVk11owlgpxpqsAbBrtFcrd/download?extra=%7B%22bitablePerm%22%3A%7B%22tableId%22%3A%22tblBJyX6jZteblYv%22%2C%22rev%22%3A90%7D%7D"
+                        }
+                    ]
+                },
+                "last_modified_by":{
+                    "avatar_url":"https://internal-api-lark-file.feishu.cn/static-resource/v1/06d568cb-f464-4c2e-bd03-76512c545c5j~?image_size=72x72&amp;cut_type=default-face&amp;quality=&amp;format=jpeg&amp;sticker_format=.webp",
+                    "email":"",
+                    "en_name":"测试1",
+                    "id":"ou_92945f86a98bba075174776959c90eda",
+                    "name":"测试1"
+                },
+                "last_modified_time":1702455191000,
+                "record_id":"recyOaMB2F"
+            }
+        ],
+        "total":1
+    },
+    "msg":"success"
+}
+```
+
+### 错误码
+
+HTTP状态码 | 错误码 | 描述 | 排查建议
+---|---|---|---
+200 | 1254000 | WrongRequestJson | 请求体错误
+200 | 1254001 | WrongRequestBody | 请求体错误
+200 | 1254002 | Fail | 导致报 1254002 错误码的场景较多，请参考以下建议排查：<br>- 如果单次操作的内容变更较大，请尝试在单次操作中减少数据量<br>- 如果你并发调用了接口，请尝试控制请求间隔，稍后重试<br>- 如果在知识库（wiki）中创建多维表格，请检查你是否使用了知识库[创建知识空间节点](https://open.feishu.cn/document/ukTMukTMukTM/uUDN04SN0QjL1QDN/wiki-v2/space-node/create)接口创建多维表格。在此场景下不能使用[创建多维表格](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app/create)接口<br>- 请检查接口参数是否有误。例如，在分页查询多维表格时，传递了无效的 page_token，或传递了错误的数据表的 table_id<br>- 如果该报错偶尔发生，可能是服务器超时或不稳定，请重试解决
+200 | 1254003 | WrongBaseToken | app_token 错误。app_token 是多维表格 App 的唯一标识。不同形态的多维表格，其 `app_token` 的获取方式不同：<br>- 如果多维表格的 URL 以 ==**feishu.cn/base**== 开头，该多维表格的 `app_token` 是下图高亮部分：<br>![app_token.png](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/6916f8cfac4045ba6585b90e3afdfb0a_GxbfkJHZBa.png?height=766&lazyload=true&width=3004)<br>- 如果多维表格的 URL 以 ==**feishu.cn/wiki**== 开头，你需调用知识库相关[获取知识空间节点信息](https://open.feishu.cn/document/ukTMukTMukTM/uUDN04SN0QjL1QDN/wiki-v2/space/get_node)接口获取多维表格的 app_token。当 `obj_type` 的值为 `bitable` 时，`obj_token` 字段的值才是多维表格的 `app_token`。<br>了解更多，参考[多维表格 app_token 获取方式](https://open.feishu.cn/document/ukTMukTMukTM/uUDN04SN0QjL1QDN/bitable-overview#-752212c)。
+200 | 1254004 | WrongTableId | table_id 错误。table_id 是多维表格数据表的唯一标识。获取方式：<br>- 你可通过多维表格 URL 获取 `table_id`，下图高亮部分即为当前数据表的 `table_id`<br>- 也可通过[列出数据表](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table/list)接口获取 `table_id`<br>![](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/18741fe2a0d3cafafaf9949b263bb57d_yD1wkOrSju.png?height=746&lazyload=true&maxWidth=700&width=2976)
+200 | 1254005 | WrongViewId | view_id 错误。view_id 是多维表格中视图的唯一标识。获取方式：<br>- 在多维表格的 URL 地址栏中，`view_id` 是下图中高亮部分：<br>![view_id.png](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/140668632c97e0095832219001d17c54_DJMgVH9x2S.png?height=748&lazyload=true&width=2998)<br>- 通过[列出视图](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-view/list)接口获取。暂时无法获取到嵌入到云文档中的多维表格的 `view_id`。<br>**注意**：<br>当 `filter` 参数 或 `sort` 参数不为空时，请求视为对数据表中的全部数据做条件过滤，指定的 `view_id` 会被忽略。
+200 | 1254006 | WrongRecordId | record_id 错误。record_id 是数据表中一条记录的唯一标识。通过[查询记录](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-record/search)接口获取
+200 | 1254007 | EmptyValue | 空值
+200 | 1254008 | EmptyView | 空视图
+200 | 1254009 | WrongFieldId | field_id 错误。field_id 是数据表中一个字段的唯一标识。通过[列出字段](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-field/list)接口获取
+200 | 1254010 | ReqConvError | 请求错误
+400 | 1254011 | Page size must greater than 0. | page_size参数非法
+200 | 1254016 | InvalidSort | 排序条件 Sort 参数错误
+200 | 1254018 | InvalidFilter | filter 参数错误。请参考[记录过滤参数填写指南](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-record/record-filter-guide)了解如何填写 filter 参数。
+200 | 1254024 | InvalidFieldNames | field_names 参数错误。请检查接口中字段名称和多维表格中的字段名称是否完全匹配。如果难以排查，建议你调用[列出字段](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-field/list)接口获取字段名称，因为根据表格页面的 UI 名称可能会忽略空格、换行或特殊符号等差异
+200 | 1254030 | TooLargeResponse | 响应体过大
+400 | 1254036 | Bitable is copying, please try again later. | 复制多维表格为异步操作，该错误码表示当前多维表格仍在复制中，在复制期间无法操作当前多维表格。需要等待复制完成后再操作
+200 | 1254040 | BaseTokenNotFound | app_token 不存在。不同形态的多维表格，其 `app_token` 的获取方式不同：<br>- 如果多维表格的 URL 以 ==**feishu.cn/base**== 开头，该多维表格的 `app_token` 是下图高亮部分：<br>![app_token.png](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/6916f8cfac4045ba6585b90e3afdfb0a_GxbfkJHZBa.png?height=766&lazyload=true&width=3004)<br>- 如果多维表格的 URL 以 ==**feishu.cn/wiki**== 开头，你需调用知识库相关[获取知识空间节点信息](https://open.feishu.cn/document/ukTMukTMukTM/uUDN04SN0QjL1QDN/wiki-v2/space/get_node)接口获取多维表格的 app_token。当 `obj_type` 的值为 `bitable` 时，`obj_token` 字段的值才是多维表格的 `app_token`。<br>了解更多，参考[多维表格 app_token 获取方式](https://open.feishu.cn/document/ukTMukTMukTM/uUDN04SN0QjL1QDN/bitable-overview#-752212c)。
+200 | 1254041 | TableIdNotFound | table_id 不存在。获取方式：<br>- 你可通过多维表格 URL 获取 `table_id`，下图高亮部分即为当前数据表的 `table_id`<br>- 也可通过[列出数据表](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table/list)接口获取 `table_id`<br>![](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/18741fe2a0d3cafafaf9949b263bb57d_yD1wkOrSju.png?height=746&lazyload=true&maxWidth=700&width=2976)
+200 | 1254042 | ViewIdNotFound | view_id 不存在。获取方式：<br>- 在多维表格的 URL 地址栏中，`view_id` 是下图中高亮部分：<br>![view_id.png](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/140668632c97e0095832219001d17c54_DJMgVH9x2S.png?height=748&lazyload=true&width=2998)<br>- 通过[列出视图](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-view/list)接口获取。暂时无法获取到嵌入到云文档中的多维表格的 `view_id`。<br>**注意**：<br>当 `filter` 参数 或 `sort` 参数不为空时，请求视为对数据表中的全部数据做条件过滤，指定的 `view_id` 会被忽略。
+200 | 1254043 | RecordIdNotFound | record_id 不存在。record_id 是数据表中一条记录的唯一标识。请通过[查询记录](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-record/search)接口获取
+200 | 1254044 | FieldIdNotFound | field_id  不存在。field_id  是数据表中一个字段的唯一标识。通过[列出字段](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-field/list)接口获取。
+200 | 1254045 | FieldNameNotFound | 字段名称不存在。请检查：<br>- 接口中字段名称和多维表格中的字段名称是否完全匹配。如果难以排查，建议你调用[列出字段](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-field/list)接口获取字段名称，因为根据表格页面的 UI 名称可能会忽略空格、换行或特殊符号等差异。<br>- 表格是否开启了高级权限但调用身份缺少对应字段的权限。你需要为调用身份授予高级权限：<br>- 对用户授予高级权限，你需要在多维表格页面右上方 **分享** 入口为当前用户添加可管理权限。![image.png](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/df3911b4f747d75914f35a46962d667d_dAsfLjv3QC.png?height=546&lazyload=true&maxWidth=550)<br>- 对应用授予高级权限，你需通过多维表格页面右上方 **「...」** -> **「...更多」** ->**「添加文档应用」** 入口为应用添加可管理权限。<br>![](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/22c027f63c540592d3ca8f41d48bb107_CSas7OYJBR.png?height=1994&maxWidth=550&width=3278)<br>![image.png](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/9f3353931fafeea16a39f0eb887db175_0tjzC9P3zU.png?maxWidth=550)<br>**注意**：<br>在 **添加文档应用** 前，你需确保目标应用至少开通了一个多维表格的 [API 权限](https://open.feishu.cn/document/ukTMukTMukTM/uYTM5UjL2ETO14iNxkTN/scope-list)。否则你将无法在文档应用窗口搜索到目标应用。    <br>- 你也可以在 **多维表格高级权限设置** 中添加用户或一个包含应用的群组, 给予这个群自定义的读写等权限。
+200 | 1254060 | TextFieldConvFail | 多行文本字段错误
+200 | 1254061 | NumberFieldConvFail | 数字字段错误
+200 | 1254062 | SingleSelectFieldConvFail | 单选字段错误
+200 | 1254063 | MultiSelectFieldConvFail | 多选字段错误
+200 | 1254064 | DatetimeFieldConvFail | 日期字段错误
+200 | 1254065 | CheckboxFieldConvFail | 复选框字段错误
+200 | 1254066 | UserFieldConvFail | 人员字段有误。原因可能是：<br>- `user_id_type` 参数指定的 ID 类型与传入的 ID 类型不匹配<br>- 传入了不识别的类型或结构，目前只支持填写 `id` 参数，且需要传入数组<br>- 跨应用传入了 `open_id`。如果跨应用传入 ID，建议使用 `user_id`。不同应用获取的 `open_id` 不能交叉使用<br>- 若想对人员字段传空，可传 null
+200 | 1254067 | LinkFieldConvFail | 关联字段错误
+200 | 1254068 | URLFieldConvFail | 超链接字段错误
+200 | 1254069 | AttachFieldConvFail | 附件字段错误
+200 | 1254072 | Failed to convert phone field, please make sure it is correct. | 电话字段错误
+200 | 1254100 | TableExceedLimit | 数据表或仪表盘数量超限。每个多维表格中，数据表加仪表盘的数量最多为 100 个
+200 | 1254101 | ViewExceedLimit | 视图数量超限, 限制200个
+200 | 1254102 | FileExceedLimit | 文件数量超限
+200 | 1254103 | RecordExceedLimit | 记录数量超限, 限制20,000条
+200 | 1254104 | RecordAddOnceExceedLimit | 单次添加记录数量超限, 单次调用最多更新 1,000 条记录
+200 | 1254107 | FilterLengthExceedLimit | Filter长度超限, 限制2,000个字符
+200 | 1254108 | SortLengthExceedLimit | Sort长度超限, 限制1,000个字符
+200 | 1254109 | FormulaTableSizeExceedLimit | 公式表大小超限
+200 | 1254130 | TooLargeCell | 格子内容过大
+200 | 1254290 | TooManyRequest | 请求过快，稍后重试
+200 | 1254291 | Write conflict | 在同一个数据表中，并发调用了读写接口或请求过快，出现冲突。请参考以下建议解决：<br>- 确保没有并发调用多维表格读写相关接口<br>- 若操作量较大，建议在接口与接口之间增加 0.5 或 1 秒的延迟，也可在报错中增加重试逻辑，确保业务的稳定性<br>- 对于写接口，可以将接口中的查询参数 `ignore_consistency_check` 设置为 true，表示在读写操作时，暂时忽略一致性检查，以提高性能
+200 | 1254301 | OperationTypeError | 多维表格未开启高级权限或不支持开启高级权限
+200 | 1254302 | Permission denied. | 调用身份缺少多维表格的高级权限。你需给予调用身份数据表的 **可管理** 权限或多维表格的 **可管理** 等权限，再重新调用。具体步骤如下所示：<br>- 对用户授予高级权限，你可在 **多维表格高级权限设置** 中添加用户，为用户开通足够权限；或在多维表格页面右上方 **分享** 入口为当前用户添加可管理权限。详情参考飞书帮助中心文档[使用多维表格高级权限](https://www.feishu.cn/hc/zh-CN/articles/588604550568-%E4%BD%BF%E7%94%A8%E5%A4%9A%E7%BB%B4%E8%A1%A8%E6%A0%BC%E9%AB%98%E7%BA%A7%E6%9D%83%E9%99%90)。<br>![](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/df3911b4f747d75914f35a46962d667d_dAsfLjv3QC.png?height=546&lazyload=true&maxWidth=550)<br>- 对应用授予高级权限，你需通过多维表格页面右上方 **「...」** -> **「...更多」** ->**「添加文档应用」** 入口为应用添加可管理权限。<br>![](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/22c027f63c540592d3ca8f41d48bb107_CSas7OYJBR.png?height=1994&lazyload=true&maxWidth=550&width=3278)<br>![image.png](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/9f3353931fafeea16a39f0eb887db175_0tjzC9P3zU.png?height=728&lazyload=true&maxWidth=550&width=890)<br>**注意**：<br>在 **添加文档应用** 前，你需确保目标应用至少开通了一个多维表格的 [API 权限](https://open.feishu.cn/document/ukTMukTMukTM/uYTM5UjL2ETO14iNxkTN/scope-list)。否则你将无法在文档应用窗口搜索到目标应用。    <br>- 你也可以在 **多维表格高级权限设置** 中添加用户或一个包含应用的群组，给予这个群自定义的读写等权限。
+200 | 1254303 | AttachPermNotAllow | 附件无权限
+200 | 1255001 | InternalError | 内部错误，请联系[技术支持](https://applink.feishu.cn/TLJpeNdW)
+200 | 1255002 | RpcError | 内部错误，请联系[技术支持](https://applink.feishu.cn/TLJpeNdW)
+200 | 1255003 | MarshalError | 序列化错误，请联系[技术支持](https://applink.feishu.cn/TLJpeNdW)
+200 | 1255004 | UmMarshalError | 反序列化错误
+200 | 1255005 | ConvError | 内部错误，请联系[技术支持](https://applink.feishu.cn/TLJpeNdW)
+504 | 1255040 | Request timed out, please try again later | 请求超时，进行重试
+400 | 1254607 | Data not ready, please try again later | 该报错一般是由于前置操作未执行完成，或本次操作数据太大，服务器计算超时导致。遇到该错误码时，建议等待一段时间后重试。通常有以下几种原因：<br>- **编辑操作频繁**：开发者对多维表格的编辑操作非常频繁。可能会导致由于等待前置操作处理完成耗时过长而超时的情况。多维表格底层对数据表的处理基于版本维度的串行方式，不支持并发。因此，并发请求时容易出现此类错误，不建议开发者对单个数据表进行并发请求。<br>- **批量操作负载重**：开发者在多维表格中进行批量新增、删除等操作时，如果数据表的数据量非常大，可能会导致单次请求耗时过长，最终导致请求超时。建议开发者适当降低批量请求的 page_size 以减少请求耗时。<br>- **资源分配与计算开销**：资源分配是基于单文档维度的，如果读接口涉及公式计算、排序等计算逻辑，会占用较多资源。例如，并发读取一个文档下的多个数据表也可能导致该文档阻塞。
+# 删除记录
+
+删除多维表格数据表中的一条记录。
+
+## 前提条件
+
+调用此接口前，请确保当前调用身份（tenant_access_token 或 user_access_token）已有多维表格的编辑等文档权限，否则接口将返回 HTTP 403 或 400 状态码。了解更多，参考[如何为应用或用户开通文档权限](https://open.feishu.cn/document/ukTMukTMukTM/uczNzUjL3czM14yN3MTN#16c6475a)。
+
+## 注意事项
+
+从其它数据源同步的数据表，不支持对记录进行增加、删除、和修改操作。
+
+## 请求
+
+基本 | 
+---|---
+HTTP URL | https://open.feishu.cn/open-apis/bitable/v1/apps/:app_token/tables/:table_id/records/:record_id
+HTTP Method | DELETE
+接口频率限制 | [50 次/秒](https://open.feishu.cn/document/ukTMukTMukTM/uUzN04SN3QjL1cDN)
+支持的应用类型 | Custom App、Store App
+权限要求<br>**调用该 API 所需的权限。开启其中任意一项权限即可调用**<br>开启任一权限即可 | 删除记录(base:record:delete)<br>查看、评论、编辑和管理多维表格(bitable:app)
+
+### 请求头
+
+名称 | 类型 | 必填 | 描述
+---|---|---|---
+Authorization | string | 是 | `tenant_access_token`<br>或<br>`user_access_token`<br>**值格式**："Bearer `access_token`"<br>**示例值**："Bearer u-7f1bcd13fc57d46bac21793a18e560"<br>[了解更多：如何选择与获取 access token](https://open.feishu.cn/document/uAjLw4CM/ugTN1YjL4UTN24CO1UjN/trouble-shooting/how-to-choose-which-type-of-token-to-use)
+
+### 路径参数
+
+名称 | 类型 | 描述
+---|---|---
+app_token | string | 多维表格 App 的唯一标识。不同形态的多维表格，其 `app_token` 的获取方式不同：<br>- 如果多维表格的 URL 以 ==**feishu.cn/base**== 开头，该多维表格的 `app_token` 是下图高亮部分：<br>![app_token.png](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/6916f8cfac4045ba6585b90e3afdfb0a_GxbfkJHZBa.png?height=766&lazyload=true&width=3004)<br>- 如果多维表格的 URL 以 ==**feishu.cn/wiki**== 开头，你需调用知识库相关[获取知识空间节点信息](https://open.feishu.cn/document/ukTMukTMukTM/uUDN04SN0QjL1QDN/wiki-v2/space/get_node)接口获取多维表格的 app_token。当 `obj_type` 的值为 `bitable` 时，`obj_token` 字段的值才是多维表格的 `app_token`。<br>了解更多，参考[多维表格 app_token 获取方式](https://open.feishu.cn/document/ukTMukTMukTM/uUDN04SN0QjL1QDN/bitable-overview#-752212c)。<br>**示例值**："appbcbWCzen6D8dezhoCH2RpMAh"
+table_id | string | 多维表格数据表的唯一标识。获取方式：<br>- 你可通过多维表格 URL 获取 `table_id`，下图高亮部分即为当前数据表的 `table_id`<br>- 也可通过[列出数据表](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table/list)接口获取 `table_id`<br>![](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/18741fe2a0d3cafafaf9949b263bb57d_yD1wkOrSju.png?height=746&lazyload=true&maxWidth=700&width=2976)<br>**示例值**："tblsRc9GRRXKqhvW"
+record_id | string | 数据表中一条记录的唯一标识。通过[查询记录](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-record/search)接口获取。<br>**示例值**："recpCsf4ME"
+
+## 响应
+
+### 响应体
+
+名称 | 类型 | 描述
+---|---|---
+code | int | 错误码，非 0 表示失败
+msg | string | 错误描述
+data | delete_record | \-
+deleted | boolean | 是否成功删除
+record_id | string | 删除的记录 ID
+
+### 响应体示例
+```json
+{
+    "code": 0,
+    "msg": "success",
+    "data": {
+        "deleted": true,
+        "record_id": "recpCsf4ME"
+    }
+}
+```
+
+### 错误码
+
+HTTP状态码 | 错误码 | 描述 | 排查建议
+---|---|---|---
+200 | 1254000 | WrongRequestJson | 请求体错误
+200 | 1254001 | WrongRequestBody | 请求体错误
+200 | 1254002 | Fail | 内部错误，请联系[技术支持](https://applink.feishu.cn/TLJpeNdW)
+200 | 1254003 | WrongBaseToken | app_token 错误
+200 | 1254004 | WrongTableId | table_id 错误
+200 | 1254005 | WrongViewId | view_id 错误
+200 | 1254006 | WrongRecordId | 检查 record_id
+200 | 1254007 | EmptyValue | 空值
+200 | 1254008 | EmptyView | 空视图
+200 | 1254009 | WrongFieldId | 字段 id 错误
+200 | 1254010 | ReqConvError | 请求错误
+200 | 1254030 | TooLargeResponse | 响应体过大
+400 | 1254036 | Base is copying, please try again later. | 多维表格副本复制中，稍后重试
+200 | 1254040 | BaseTokenNotFound | app_token 不存在
+200 | 1254041 | TableIdNotFound | table_id 不存在
+200 | 1254042 | ViewIdNotFound | view_id 不存在
+200 | 1254043 | RecordIdNotFound | record_id 不存在
+200 | 1254044 | FieldIdNotFound | field_id  不存在
+200 | 1254060 | TextFieldConvFail | 多行文本字段错误
+200 | 1254061 | NumberFieldConvFail | 数字字段错误
+200 | 1254062 | SingleSelectFieldConvFail | 单选字段错误
+200 | 1254063 | MultiSelectFieldConvFail | 多选字段错误
+200 | 1254064 | DatetimeFieldConvFail | 日期字段错误
+200 | 1254065 | CheckboxFieldConvFail | 复选框字段错误
+200 | 1254066 | UserFieldConvFail | 人员字段有误。原因可能是：<br>- `user_id_type` 参数指定的 ID 类型与传入的 ID 类型不匹配<br>- 传入了不识别的类型或结构，目前只支持填写 `id` 参数，且需要传入数组<br>- 跨应用传入了 `open_id`。如果跨应用传入 ID，建议使用 `user_id`。不同应用获取的 `open_id` 不能交叉使用
+200 | 1254067 | LinkFieldConvFail | 关联字段错误
+200 | 1254072 | InvalidPhoneNumber | 转换手机号码格式失败，请检查传入的手机号码格式是否正确
+200 | 1254100 | TableExceedLimit | 数据表或仪表盘数量超限。每个多维表格中，数据表加仪表盘的数量最多为 100 个
+200 | 1254101 | ViewExceedLimit | 视图数量超限, 限制200个
+200 | 1254102 | FileExceedLimit | 文件数量超限
+200 | 1254103 | RecordExceedLimit | 记录数量超限, 限制20,000条
+200 | 1254104 | RecordAddOnceExceedLimit | 单次添加记录数量超限, 限制500条
+200 | 1254130 | TooLargeCell | 格子内容过大
+200 | 1254290 | TooManyRequest | 请求过快，稍后重试
+200 | 1254291 | Write conflict | 同一个数据表(table) 不支持并发调用写接口，请检查是否存在并发调用写接口。写接口包括：新增、修改、删除记录；新增、修改、删除字段；修改表单；修改视图等。
+200 | 1254301 | OperationTypeError | 多维表格未开启高级权限或不支持开启高级权限
+200 | 1255001 | InternalError | 内部错误，请联系[技术支持](https://applink.feishu.cn/TLJpeNdW)
+200 | 1255002 | RpcError | 内部错误，请联系[技术支持](https://applink.feishu.cn/TLJpeNdW)
+200 | 1255003 | MarshalError | 序列化错误，请联系[技术支持](https://applink.feishu.cn/TLJpeNdW)
+200 | 1255004 | UmMarshalError | 反序列化错误
+200 | 1255005 | ConvError | 内部错误，请联系[技术支持](https://applink.feishu.cn/TLJpeNdW)
+504 | 1255040 | Request timed out, please try again later. | 请求超时，请进行重试
+400 | 1254607 | Data not ready, please try again later | 该报错一般是由于前置操作未执行完成，或本次操作数据太大，服务器计算超时导致。遇到该错误码时，建议等待一段时间后重试。通常有以下几种原因：<br>- **编辑操作频繁**：开发者对多维表格的编辑操作非常频繁。可能会导致由于等待前置操作处理完成耗时过长而超时的情况。多维表格底层对数据表的处理基于版本维度的串行方式，不支持并发。因此，并发请求时容易出现此类错误，不建议开发者对单个数据表进行并发请求。<br>- **批量操作负载重**：开发者在多维表格中进行批量新增、删除等操作时，如果数据表的数据量非常大，可能会导致单次请求耗时过长，最终导致请求超时。建议开发者适当降低批量请求的 page_size 以减少请求耗时。<br>- **资源分配与计算开销**：资源分配是基于单文档维度的，如果读接口涉及公式计算、排序等计算逻辑，会占用较多资源。例如，并发读取一个文档下的多个数据表也可能导致该文档阻塞。
+403 | 1254302 | Permission denied. | 无访问权限，常由表格开启了高级权限造成。请确保当前调用身份具有高级权限或多维表格的管理权限：<br>- 对于应用身份，你需要通过云文档网页页面右上方 「**...**」->「**...更多**」-> 「**添加文档应用**」入口添加并授予应用可管理权限，或在高级权限设置中添加一个包含应用的群组，给予这个群读写权限<br>- 对于用户身份，你需要通过云文档网页的「**分享**」入口授予用户管理权限<br>了解更多，参考[如何为应用或用户开通云文档权限](https://open.feishu.cn/document/ukTMukTMukTM/uczNzUjL3czM14yN3MTN#16c6475a)。
+403 | 1254304 | Permission denied. | 权限不足。请检查多维表格是否开启了高级权限，如果开启高级权限，调用身份需要有多维表格的可管理权限
+403 | 1254608 | ReqRecommited | 请求重复，请检查本次请求的请求参数和上一次是否完全相同
+# 新增多条记录
+
+在多维表格数据表中新增多条记录，单次调用最多新增 1,000 条记录。
+
+## 前提条件
+
+调用此接口前，请确保当前调用身份（tenant_access_token 或 user_access_token）已有多维表格的编辑等文档权限，否则接口将返回 HTTP 403 或 400 状态码。了解更多，参考[如何为应用或用户开通文档权限](https://open.feishu.cn/document/ukTMukTMukTM/uczNzUjL3czM14yN3MTN#16c6475a)。
+
+## 注意事项
+
+从其它数据源同步的数据表，不支持对记录进行增加、删除、和修改操作。
+
+## 请求
+
+基本 | 
+---|---
+HTTP URL | https://open.feishu.cn/open-apis/bitable/v1/apps/:app_token/tables/:table_id/records/batch_create
+HTTP Method | POST
+接口频率限制 | [50 次/秒](https://open.feishu.cn/document/ukTMukTMukTM/uUzN04SN3QjL1cDN)
+支持的应用类型 | Custom App、Store App
+权限要求<br>**调用该 API 所需的权限。开启其中任意一项权限即可调用**<br>开启任一权限即可 | 新增记录(base:record:create)<br>查看、评论、编辑和管理多维表格(bitable:app)
+字段权限要求 | **注意事项**：该接口返回体中存在下列敏感字段，仅当开启对应的权限后才会返回；如果无需获取这些字段，则不建议申请<br>获取用户基本信息(contact:user.base:readonly)<br>获取用户 user ID(contact:user.employee_id:readonly)<br>以应用身份访问通讯录(contact:contact:access_as_app)<br>读取通讯录(contact:contact:readonly)<br>以应用身份读取通讯录(contact:contact:readonly_as_app)
+
+### 请求头
+
+名称 | 类型 | 必填 | 描述
+---|---|---|---
+Authorization | string | 是 | `tenant_access_token`<br>或<br>`user_access_token`<br>**值格式**："Bearer `access_token`"<br>**示例值**："Bearer u-7f1bcd13fc57d46bac21793a18e560"<br>[了解更多：如何选择与获取 access token](https://open.feishu.cn/document/uAjLw4CM/ugTN1YjL4UTN24CO1UjN/trouble-shooting/how-to-choose-which-type-of-token-to-use)
+Content-Type | string | 是 | **固定值**："application/json; charset=utf-8"
+
+### 路径参数
+
+名称 | 类型 | 描述
+---|---|---
+app_token | string | 多维表格 App 的唯一标识。不同形态的多维表格，其 app_token 的获取方式不同：<br>- 如果多维表格的 URL 以 ==**feishu.cn/base**== 开头，该多维表格的 app_token 是下图高亮部分：<br>![app_token.png](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/6916f8cfac4045ba6585b90e3afdfb0a_GxbfkJHZBa.png?height=766&lazyload=true&width=3004)<br>- 如果多维表格的 URL 以 ==**feishu.cn/wiki**== 开头，你需调用知识库相关[获取知识空间节点信息](https://open.feishu.cn/document/ukTMukTMukTM/uUDN04SN0QjL1QDN/wiki-v2/space/get_node)接口获取多维表格的 app_token。当 obj_type 的值为 bitable 时，obj_token 字段的值才是多维表格的 app_token。<br>了解更多，参考[多维表格 app_token 获取方式](https://open.feishu.cn/document/ukTMukTMukTM/uUDN04SN0QjL1QDN/bitable-overview#-752212c)。<br>**示例值**："appbcbWCzen6D8dezhoCH2RpMAh"
+table_id | string | 多维表格数据表的唯一标识。获取方式：<br>- 你可通过多维表格 URL 获取 `table_id`，下图高亮部分即为当前数据表的 `table_id`<br>- 也可通过[列出数据表](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table/list)接口获取 `table_id`<br>![](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/18741fe2a0d3cafafaf9949b263bb57d_yD1wkOrSju.png?height=746&lazyload=true&maxWidth=700&width=2976)<br>**示例值**："tblsRc9GRRXKqhvW"
+
+### 查询参数
+
+名称 | 类型 | 必填 | 描述
+---|---|---|---
+user_id_type | string | 否 | 用户 ID 类型<br>**示例值**：open_id<br>**可选值有**：<br>- open_id：标识一个用户在某个应用中的身份。同一个用户在不同应用中的 Open ID 不同。[了解更多：如何获取 Open ID](https://open.feishu.cn/document/uAjLw4CM/ugTN1YjL4UTN24CO1UjN/trouble-shooting/how-to-obtain-openid)<br>- union_id：标识一个用户在某个应用开发商下的身份。同一用户在同一开发商下的应用中的 Union ID 是相同的，在不同开发商下的应用中的 Union ID 是不同的。通过 Union ID，应用开发商可以把同个用户在多个应用中的身份关联起来。[了解更多：如何获取 Union ID？](https://open.feishu.cn/document/uAjLw4CM/ugTN1YjL4UTN24CO1UjN/trouble-shooting/how-to-obtain-union-id)<br>- user_id：标识一个用户在某个租户内的身份。同一个用户在租户 A 和租户 B 内的 User ID 是不同的。在同一个租户内，一个用户的 User ID 在所有应用（包括商店应用）中都保持一致。User ID 主要用于在不同的应用间打通用户数据。[了解更多：如何获取 User ID？](https://open.feishu.cn/document/uAjLw4CM/ugTN1YjL4UTN24CO1UjN/trouble-shooting/how-to-obtain-user-id)<br>**默认值**：`open_id`<br>**当值为 `user_id`，字段权限要求**：<br>获取用户 user ID(contact:user.employee_id:readonly)
+client_token | string | 否 | 格式为标准的 uuidv4，操作的唯一标识，用于幂等的进行更新操作。此值为空表示将发起一次新的请求，此值非空表示幂等的进行更新操作。<br>**示例值**：fe599b60-450f-46ff-b2ef-9f6675625b97
+ignore_consistency_check | boolean | 否 | 是否忽略一致性读写检查，默认为 false，即在进行读写操作时，系统将确保读取到的数据和写入的数据是一致的。可选值：<br>- true：忽略读写一致性检查，提高性能，但可能会导致某些节点的数据不同步，出现暂时不一致<br>- false：开启读写一致性检查，确保数据在读写过程中一致<br>**示例值**：true
+
+### 请求体
+
+名称 | 类型 | 必填 | 描述
+---|---|---|---
+records | app.table.record\[\] | 是 | 要新增的记录列表
+fields | map&lt;string, union&gt; | 是 | 要新增的记录的数据。你需先指定数据表中的字段（即指定列），再传入正确格式的数据作为一条记录。<br>**注意**：<br>该接口支持的字段类型及其描述如下所示：<br>- 文本：原值展示，不支持 markdown 语法<br>- 数字：填写数字格式的值<br>- 单选：填写选项值，对于新的选项值，将会创建一个新的选项<br>- 多选：填写多个选项值，对于新的选项值，将会创建一个新的选项。如果填写多个相同的新选项值，将会创建多个相同的选项<br>- 日期：填写毫秒级时间戳<br>- 复选框：填写 true 或 false<br>- 条码<br>- 人员：填写用户的[open_id](https://open.feishu.cn/document/uAjLw4CM/ugTN1YjL4UTN24CO1UjN/trouble-shooting/how-to-obtain-openid)、[union_id](https://open.feishu.cn/document/uAjLw4CM/ugTN1YjL4UTN24CO1UjN/trouble-shooting/how-to-obtain-union-id) 或 [user_id](https://open.feishu.cn/document/uAjLw4CM/ugTN1YjL4UTN24CO1UjN/trouble-shooting/how-to-obtain-user-id)，类型需要与 user_id_type 指定的类型一致<br>- 电话号码：填写文本内容<br>- 超链接：参考以下示例，text 为文本值，link 为 URL 链接<br>- 附件：填写附件 token，需要先调用[上传素材](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/drive-v1/media/upload_all)或[分片上传素材](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/drive-v1/media/upload_prepare)接口将附件上传至该多维表格中<br>- 单向关联：填写被关联表的记录 ID<br>- 双向关联：填写被关联表的记录 ID<br>- 地理位置：填写经纬度坐标<br>不同类型字段的数据结构请参考[数据结构概述](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/bitable/development-guide/bitable-structure)。<br>**示例值**：{"多行文本":"HelloWorld"}
+shared_url | string | 否 | 记录分享链接。本接口不返回该参数，批量获取记录接口将返回该参数<br>**示例值**："https://www.example.com/record/WVoXrzIaqeorcJcHgzAcg8AQnNd"
+record_url | string | 否 | 记录链接。本接口不返回该参数，批量获取记录接口将返回该参数<br>**示例值**："https://www.example.com/record/WVoXrzIaqeorcJcHgzAcg8AQnNd"
+
+### 请求体示例
+```json
+{
+  "records": [
+    {
+      "fields": {
+        "文本": "文本内容",
+        "条码": "qawqe",
+        "数字": 100,
+        "货币": 3,
+        "评分": 3,
+        "进度": 0.25,
+        "单选": "选项1",
+        "多选": [
+          "选项1",
+          "选项2"
+        ],
+        "日期": 1674206443000,
+        "复选框": true,
+        "人员": [
+          {
+            "id": "ou_2910013f1e6456f16a0ce75ede950a0a"
+          },
+          {
+            "id": "ou_e04138c9633dd0d2ea166d79f548ab5d"
+          }
+        ],
+        "群组": [
+          {
+            "id": "oc_cd07f55f14d6f4a4f1b51504e7e97f48"
+          }
+        ],
+        "电话号码": "13026162666",
+        "超链接": {
+          "text": "飞书多维表格官网",
+          "link": "https://www.feishu.cn/product/base"
+        },
+        "附件": [
+          {
+            "file_token": "Vl3FbVkvnowlgpxpqsAbBrtFcrd"
+          }
+        ],
+        "单向关联": [
+          "recHTLvO7x",
+          "recbS8zb2m"
+        ],
+        "双向关联": [
+          "recHTLvO7x",
+          "recbS8zb2m"
+        ],
+        "地理位置": "116.397755,39.903179"
+      }
+    },
+    {
+      "fields": {
+        "文本": "文本内容2"
+      }
+    }
+  ]
+}
+```
+
+## 响应
+
+### 响应体
+
+名称 | 类型 | 描述
+---|---|---
+code | int | 错误码，非 0 表示失败
+msg | string | 错误描述
+data | \- | \-
+records | app.table.record\[\] | 新增的记录列表
+fields | map&lt;string, union&gt; | 新增的记录的数据
+record_id | string | 新增记录的 ID
+created_by | person | 该记录的创建人信息。本接口不返回该参数
+id | string | 用户id，id类型等于user_id_type所指定的类型。
+name | string | 用户的中文名称
+en_name | string | 用户的英文名称
+email | string | 用户的邮箱
+avatar_url | string | 头像链接<br>**字段权限要求（满足任一）**：<br>获取用户基本信息(contact:user.base:readonly)<br>以应用身份访问通讯录(contact:contact:access_as_app)<br>读取通讯录(contact:contact:readonly)<br>以应用身份读取通讯录(contact:contact:readonly_as_app)
+created_time | int | 该记录的创建时间。本接口不返回该参数
+last_modified_by | person | 该记录最近一次更新的修改人。本接口不返回该参数
+id | string | 用户id，id类型等于user_id_type所指定的类型。
+name | string | 用户的中文名称
+en_name | string | 用户的英文名称
+email | string | 用户的邮箱
+avatar_url | string | 头像链接<br>**字段权限要求（满足任一）**：<br>获取用户基本信息(contact:user.base:readonly)<br>以应用身份访问通讯录(contact:contact:access_as_app)<br>读取通讯录(contact:contact:readonly)<br>以应用身份读取通讯录(contact:contact:readonly_as_app)
+last_modified_time | int | 该记录最近一次的更新时间。本接口不返回该参数
+shared_url | string | 记录分享链接(批量获取记录接口将返回该字段)
+record_url | string | 记录链接，本接口不返回该参数，查询记录接口将返回该参数
+
+### 响应体示例
+```json
+{
+  "code": 0,
+  "data": {
+    "records": [
+      {
+        "fields": {
+          "任务名称": "维护客户关系",
+          "创建日期": 1674206443000,
+          "截止日期": 1674206443000
+        },
+        "id": "recusyQbB0fVL5",
+        "record_id": "recusyQbB0fVL5"
+      },
+      {
+        "fields": {
+          "任务名称": "跟进与谈判",
+          "创建日期": 1674206443000,
+          "截止日期": 1674206443000
+        },
+        "id": "recusyQbB0CJjX",
+        "record_id": "recusyQbB0CJjX"
+      }
+    ]
+  },
+  "msg": "success"
+}
+```
+
+### 错误码
+
+HTTP状态码 | 错误码 | 描述 | 排查建议
+---|---|---|---
+200 | 1254000 | WrongRequestJson | 请求体错误
+200 | 1254001 | WrongRequestBody | 请求体错误
+200 | 1254002 | Fail | 导致报 1254002 错误码的场景较多，请参考以下建议排查：<br>- 如果单次操作的内容变更较大，请尝试在单次操作中减少数据量<br>- 如果你并发调用了接口，请尝试控制请求间隔，稍后重试<br>- 如果在知识库（wiki）中创建多维表格，请检查你是否使用了知识库[创建知识空间节点](https://open.feishu.cn/document/ukTMukTMukTM/uUDN04SN0QjL1QDN/wiki-v2/space-node/create)接口创建多维表格。在此场景下不能使用[创建多维表格](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app/create)接口<br>- 请检查接口参数是否有误。例如，在分页查询多维表格时，传递了无效的 page_token，或传递了错误的数据表的 table_id<br>- 如果该报错偶尔发生，可能是服务器超时或不稳定，请重试解决
+200 | 1254003 | WrongBaseToken | app_token 错误。app_token 是多维表格 App 的唯一标识。不同形态的多维表格，其 `app_token` 的获取方式不同：<br>- 如果多维表格的 URL 以 ==**feishu.cn/base**== 开头，该多维表格的 `app_token` 是下图高亮部分：<br>![app_token.png](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/6916f8cfac4045ba6585b90e3afdfb0a_GxbfkJHZBa.png?height=766&lazyload=true&width=3004)<br>- 如果多维表格的 URL 以 ==**feishu.cn/wiki**== 开头，你需调用知识库相关[获取知识空间节点信息](https://open.feishu.cn/document/ukTMukTMukTM/uUDN04SN0QjL1QDN/wiki-v2/space/get_node)接口获取多维表格的 app_token。当 `obj_type` 的值为 `bitable` 时，`obj_token` 字段的值才是多维表格的 `app_token`。<br>了解更多，参考[多维表格 app_token 获取方式](https://open.feishu.cn/document/ukTMukTMukTM/uUDN04SN0QjL1QDN/bitable-overview#-752212c)。
+200 | 1254004 | WrongTableId | table_id 错误。table_id 是多维表格数据表的唯一标识。获取方式：<br>- 你可通过多维表格 URL 获取 `table_id`，下图高亮部分即为当前数据表的 `table_id`<br>- 也可通过[列出数据表](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table/list)接口获取 `table_id`<br>![](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/18741fe2a0d3cafafaf9949b263bb57d_yD1wkOrSju.png?height=746&lazyload=true&maxWidth=700&width=2976)
+200 | 1254005 | WrongViewId | view_id 错误。view_id 是多维表格中视图的唯一标识。获取方式：<br>- 在多维表格的 URL 地址栏中，`view_id` 是下图中高亮部分：<br>![view_id.png](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/140668632c97e0095832219001d17c54_DJMgVH9x2S.png?height=748&lazyload=true&width=2998)<br>- 通过[列出视图](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-view/list)接口获取。暂时无法获取到嵌入到云文档中的多维表格的 `view_id`。<br>**注意**：<br>当 `filter` 参数 或 `sort` 参数不为空时，请求视为对数据表中的全部数据做条件过滤，指定的 `view_id` 会被忽略。
+200 | 1254006 | WrongRecordId | record_id 错误。record_id 是数据表中一条记录的唯一标识。通过[查询记录](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-record/search)接口获取
+200 | 1254007 | EmptyValue | 空值
+200 | 1254008 | EmptyView | 空视图
+200 | 1254009 | WrongFieldId | field_id 错误。field_id 是数据表中一个字段的唯一标识。通过[列出字段](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-field/list)接口获取
+200 | 1254010 | ReqConvError | 请求错误
+400 | 1254015 | Field types do not match. | 字段类型不匹配，请检查传入的记录内容是否符合对应字段类型的格式要求
+403 | 1254027 | UploadAttachNotAllowed | 附件未挂载, 禁止上传
+200 | 1254030 | TooLargeResponse | 响应体过大
+400 | 1254036 | Base is copying, please try again later. | 复制多维表格为异步操作，该错误码表示当前多维表格仍在复制中，在复制期间无法操作当前多维表格。需要等待复制完成后再操作
+400 | 1254037 | Invalid client token, make sure that it complies with the specification. | 幂等键格式错误，需要传入 uuidv4 格式
+200 | 1254040 | BaseTokenNotFound | app_token 不存在。不同形态的多维表格，其 `app_token` 的获取方式不同：<br>- 如果多维表格的 URL 以 ==**feishu.cn/base**== 开头，该多维表格的 `app_token` 是下图高亮部分：<br>![app_token.png](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/6916f8cfac4045ba6585b90e3afdfb0a_GxbfkJHZBa.png?height=766&lazyload=true&width=3004)<br>- 如果多维表格的 URL 以 ==**feishu.cn/wiki**== 开头，你需调用知识库相关[获取知识空间节点信息](https://open.feishu.cn/document/ukTMukTMukTM/uUDN04SN0QjL1QDN/wiki-v2/space/get_node)接口获取多维表格的 app_token。当 `obj_type` 的值为 `bitable` 时，`obj_token` 字段的值才是多维表格的 `app_token`。<br>了解更多，参考[多维表格 app_token 获取方式](https://open.feishu.cn/document/ukTMukTMukTM/uUDN04SN0QjL1QDN/bitable-overview#-752212c)。
+200 | 1254041 | TableIdNotFound | table_id 不存在。获取方式：<br>- 你可通过多维表格 URL 获取 `table_id`，下图高亮部分即为当前数据表的 `table_id`<br>- 也可通过[列出数据表](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table/list)接口获取 `table_id`<br>![](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/18741fe2a0d3cafafaf9949b263bb57d_yD1wkOrSju.png?height=746&lazyload=true&maxWidth=700&width=2976)
+200 | 1254042 | ViewIdNotFound | view_id 不存在。获取方式：<br>- 在多维表格的 URL 地址栏中，`view_id` 是下图中高亮部分：<br>![view_id.png](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/140668632c97e0095832219001d17c54_DJMgVH9x2S.png?height=748&lazyload=true&width=2998)<br>- 通过[列出视图](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-view/list)接口获取。暂时无法获取到嵌入到云文档中的多维表格的 `view_id`。<br>**注意**：<br>当 `filter` 参数 或 `sort` 参数不为空时，请求视为对数据表中的全部数据做条件过滤，指定的 `view_id` 会被忽略。
+200 | 1254043 | RecordIdNotFound | record_id 不存在。record_id 是数据表中一条记录的唯一标识。请通过[查询记录](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-record/search)接口获取
+200 | 1254044 | FieldIdNotFound | field_id 不存在。field_id 是数据表中一个字段的唯一标识。通过[列出字段](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-field/list)接口获取
+200 | 1254045 | FieldNameNotFound | 字段名称不存在。请检查：<br>- 接口中字段名称和多维表格中的字段名称是否完全匹配。如果难以排查，建议你调用[列出字段](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-field/list)接口获取字段名称，因为根据表格页面的 UI 名称可能会忽略空格、换行或特殊符号等差异。<br>- 表格是否开启了高级权限但调用身份缺少对应字段的权限。你需要为调用身份授予高级权限：<br>- 对用户授予高级权限，你需要在多维表格页面右上方 **分享** 入口为当前用户添加可管理权限。![image.png](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/df3911b4f747d75914f35a46962d667d_dAsfLjv3QC.png?height=546&lazyload=true&maxWidth=550)<br>- 对应用授予高级权限，你需通过多维表格页面右上方 **「...」** -> **「...更多」** ->**「添加文档应用」** 入口为应用添加可管理权限。<br>![](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/22c027f63c540592d3ca8f41d48bb107_CSas7OYJBR.png?height=1994&maxWidth=550&width=3278)<br>![image.png](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/9f3353931fafeea16a39f0eb887db175_0tjzC9P3zU.png?maxWidth=550)<br>**注意**：<br>在 **添加文档应用** 前，你需确保目标应用至少开通了一个多维表格的 [API 权限](https://open.feishu.cn/document/ukTMukTMukTM/uYTM5UjL2ETO14iNxkTN/scope-list)。否则你将无法在文档应用窗口搜索到目标应用。    <br>- 你也可以在 **多维表格高级权限设置** 中添加用户或一个包含应用的群组, 给予这个群自定义的读写等权限。
+200 | 1254060 | TextFieldConvFail | 多行文本字段错误
+200 | 1254061 | NumberFieldConvFail | 数字字段错误
+200 | 1254062 | SingleSelectFieldConvFail | 单选字段错误
+200 | 1254063 | MultiSelectFieldConvFail | 多选字段错误
+200 | 1254064 | DatetimeFieldConvFail | 日期字段错误
+200 | 1254065 | CheckboxFieldConvFail | 复选框字段错误
+200 | 1254066 | UserFieldConvFail | 人员字段有误。原因可能是：<br>- `user_id_type` 参数指定的 ID 类型与传入的 ID 类型不匹配<br>- 传入了不识别的类型或结构，目前只支持填写 `id` 参数，且需要传入数组<br>- 跨应用传入了 `open_id`。如果跨应用传入 ID，建议使用 `user_id`。不同应用获取的 `open_id` 不能交叉使用<br>- 若想对人员字段传空，可传 null
+200 | 1254067 | LinkFieldConvFail | 关联字段错误
+200 | 1254068 | URLFieldConvFail | 超链接字段错误
+200 | 1254069 | AttachFieldConvFail | 附件字段错误
+200 | 1254072 | Failed to convert phone field, please make sure it is correct. | 电话字段错误
+400 | 1254074 | DuplexLinkFieldConvFail | 参数无效，需要使用字符串数组
+200 | 1254100 | TableExceedLimit | 数据表或仪表盘数量超限。每个多维表格中，数据表加仪表盘的数量最多为 100 个
+200 | 1254101 | ViewExceedLimit | 视图数量超限, 限制200个
+200 | 1254102 | FileExceedLimit | 超限
+200 | 1254103 | RecordExceedLimit | 记录数量超限, 限制20,000条
+200 | 1254104 | RecordAddOnceExceedLimit | 单次添加记录数量超限, 单次调用最多更新 1,000 条记录
+200 | 1254105 | ColumnExceedLimit | 字段数量超限
+200 | 1254106 | AttachExceedLimit | 附件过多
+200 | 1254130 | TooLargeCell | 格子内容过大
+200 | 1254290 | TooManyRequest | 请求过快，稍后重试
+200 | 1254291 | Write conflict | 在同一个数据表中，并发调用了读写接口或请求过快，出现冲突。请参考以下建议解决：<br>- 确保没有并发调用多维表格读写相关接口<br>- 若操作量较大，建议在接口与接口之间增加 0.5 或 1 秒的延迟，也可在报错中增加重试逻辑，确保业务的稳定性<br>- 对于写接口，可以将接口中的查询参数 `ignore_consistency_check` 设置为 true，表示在读写操作时，暂时忽略一致性检查，以提高性能
+200 | 1254301 | OperationTypeError | 多维表格未开启高级权限或不支持开启高级权限
+200 | 1254303 | AttachPermNotAllow | 没有写入附件至多维表格的权限。要在多维表格中写入附件，你需先调用[上传素材](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/drive-v1/media/upload_all)接口，将附件上传到当前多维表格中，再新增记录
+200 | 1255001 | InternalError | 内部错误，请联系[技术支持](https://applink.feishu.cn/TLJpeNdW)
+200 | 1255002 | RpcError | 内部错误，请联系[技术支持](https://applink.feishu.cn/TLJpeNdW)
+200 | 1255003 | MarshalError | 序列化错误，请联系[技术支持](https://applink.feishu.cn/TLJpeNdW)
+200 | 1255004 | UmMarshalError | 反序列化错误
+200 | 1255005 | ConvError | 内部错误，请联系[技术支持](https://applink.feishu.cn/TLJpeNdW)
+400 | 1255006 | Client token conflict, please generate a new client token and try again. | 幂等键冲突，需要重新随机生成一个幂等键
+504 | 1255040 | 请求超时 | 进行重试
+400 | 1254607 | Data not ready, please try again later | 该报错一般是由于前置操作未执行完成，或本次操作数据太大，服务器计算超时导致。遇到该错误码时，建议等待一段时间后重试。通常有以下几种原因：<br>- **编辑操作频繁**：开发者对多维表格的编辑操作非常频繁。可能会导致由于等待前置操作处理完成耗时过长而超时的情况。多维表格底层对数据表的处理基于版本维度的串行方式，不支持并发。因此，并发请求时容易出现此类错误，不建议开发者对单个数据表进行并发请求。<br>- **批量操作负载重**：开发者在多维表格中进行批量新增、删除等操作时，如果数据表的数据量非常大，可能会导致单次请求耗时过长，最终导致请求超时。建议开发者适当降低批量请求的 page_size 以减少请求耗时。<br>- **资源分配与计算开销**：资源分配是基于单文档维度的，如果读接口涉及公式计算、排序等计算逻辑，会占用较多资源。例如，并发读取一个文档下的多个数据表也可能导致该文档阻塞。
+403 | 1254302 | Permission denied. | 调用身份缺少多维表格的高级权限。你需给予调用身份数据表的 **可管理** 权限或多维表格的 **可管理** 等权限，再重新调用。具体步骤如下所示：<br>- 对用户授予高级权限，你可在 **多维表格高级权限设置** 中添加用户，为用户开通足够权限；或在多维表格页面右上方 **分享** 入口为当前用户添加可管理权限。详情参考飞书帮助中心文档[使用多维表格高级权限](https://www.feishu.cn/hc/zh-CN/articles/588604550568-%E4%BD%BF%E7%94%A8%E5%A4%9A%E7%BB%B4%E8%A1%A8%E6%A0%BC%E9%AB%98%E7%BA%A7%E6%9D%83%E9%99%90)。<br>![](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/df3911b4f747d75914f35a46962d667d_dAsfLjv3QC.png?height=546&lazyload=true&maxWidth=550)<br>- 对应用授予高级权限，你需通过多维表格页面右上方 **「...」** -> **「...更多」** ->**「添加文档应用」** 入口为应用添加可管理权限。<br>![](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/22c027f63c540592d3ca8f41d48bb107_CSas7OYJBR.png?height=1994&lazyload=true&maxWidth=550&width=3278)<br>![image.png](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/9f3353931fafeea16a39f0eb887db175_0tjzC9P3zU.png?height=728&lazyload=true&maxWidth=550&width=890)<br>**注意**：<br>在 **添加文档应用** 前，你需确保目标应用至少开通了一个多维表格的 [API 权限](https://open.feishu.cn/document/ukTMukTMukTM/uYTM5UjL2ETO14iNxkTN/scope-list)。否则你将无法在文档应用窗口搜索到目标应用。    <br>- 你也可以在 **多维表格高级权限设置** 中添加用户或一个包含应用的群组，给予这个群自定义的读写等权限。
+403 | 1254304 | Permission denied. | 权限不足。请检查多维表格是否开启了高级权限，如果开启高级权限，调用身份需要有多维表格的可管理权限
+403 | 1254306 | The tenant or base owner is subject to base plan limits. | 联系租户管理员申请权益
+403 | 1254608 | Same API requests are submitted repeatedly. | 基于同一个多维表格版本重复提交了更新请求（传入了相同的 client_token），常见于并发或时间间隔极短的请求，例如并发将一个视图的信息更新为相同的内容。建议稍后重试
+# 更新多条记录
+
+更新数据表中的多条记录，单次调用最多更新 1,000 条记录。
+
+## 前提条件
+
+调用此接口前，请确保当前调用身份（tenant_access_token 或 user_access_token）已有多维表格的编辑等文档权限，否则接口将返回 HTTP 403 或 400 状态码。了解更多，参考[如何为应用或用户开通文档权限](https://open.feishu.cn/document/ukTMukTMukTM/uczNzUjL3czM14yN3MTN#16c6475a)。
+## 注意事项
+从其它数据源同步的数据表，不支持对记录进行增加、删除、和修改操作。
+
+## 请求
+
+基本 | 
+---|---
+HTTP URL | https://open.feishu.cn/open-apis/bitable/v1/apps/:app_token/tables/:table_id/records/batch_update
+HTTP Method | POST
+接口频率限制 | [50 次/秒](https://open.feishu.cn/document/ukTMukTMukTM/uUzN04SN3QjL1cDN)
+支持的应用类型 | Custom App、Store App
+权限要求<br>**调用该 API 所需的权限。开启其中任意一项权限即可调用**<br>开启任一权限即可 | 更新记录(base:record:update)<br>查看、评论、编辑和管理多维表格(bitable:app)
+字段权限要求 | **注意事项**：该接口返回体中存在下列敏感字段，仅当开启对应的权限后才会返回；如果无需获取这些字段，则不建议申请<br>获取用户基本信息(contact:user.base:readonly)<br>获取用户 user ID(contact:user.employee_id:readonly)<br>以应用身份访问通讯录(contact:contact:access_as_app)<br>读取通讯录(contact:contact:readonly)<br>以应用身份读取通讯录(contact:contact:readonly_as_app)
+
+### 请求头
+
+名称 | 类型 | 必填 | 描述
+---|---|---|---
+Authorization | string | 是 | `tenant_access_token`<br>或<br>`user_access_token`<br>**值格式**："Bearer `access_token`"<br>**示例值**："Bearer u-7f1bcd13fc57d46bac21793a18e560"<br>[了解更多：如何选择与获取 access token](https://open.feishu.cn/document/uAjLw4CM/ugTN1YjL4UTN24CO1UjN/trouble-shooting/how-to-choose-which-type-of-token-to-use)
+Content-Type | string | 是 | **固定值**："application/json; charset=utf-8"
+
+### 路径参数
+
+名称 | 类型 | 描述
+---|---|---
+app_token | string | 多维表格 App 的唯一标识。不同形态的多维表格，其 app_token 的获取方式不同：<br>- 如果多维表格的 URL 以 ==**feishu.cn/base**== 开头，该多维表格的 app_token 是下图高亮部分：<br>![app_token.png](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/6916f8cfac4045ba6585b90e3afdfb0a_GxbfkJHZBa.png?height=766&lazyload=true&width=3004)<br>- 如果多维表格的 URL 以 ==**feishu.cn/wiki**== 开头，你需调用知识库相关[获取知识空间节点信息](https://open.feishu.cn/document/ukTMukTMukTM/uUDN04SN0QjL1QDN/wiki-v2/space/get_node)接口获取多维表格的 app_token。当 obj_type 的值为 bitable 时，obj_token 字段的值才是多维表格的 app_token。<br>了解更多，参考[多维表格 app_token 获取方式](https://open.feishu.cn/document/ukTMukTMukTM/uUDN04SN0QjL1QDN/bitable-overview#-752212c)。<br>**示例值**："appbcbWCzen6D8dezhoCH2RpMAh"
+table_id | string | 多维表格数据表的唯一标识。获取方式：<br>- 你可通过多维表格 URL 获取 `table_id`，下图高亮部分即为当前数据表的 `table_id`<br>- 也可通过[列出数据表](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table/list)接口获取 `table_id`<br>![](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/18741fe2a0d3cafafaf9949b263bb57d_yD1wkOrSju.png?height=746&lazyload=true&maxWidth=700&width=2976)<br>**示例值**："tblsRc9GRRXKqhvW"
+
+### 查询参数
+
+名称 | 类型 | 必填 | 描述
+---|---|---|---
+user_id_type | string | 否 | 用户 ID 类型<br>**示例值**：open_id<br>**可选值有**：<br>- open_id：标识一个用户在某个应用中的身份。同一个用户在不同应用中的 Open ID 不同。[了解更多：如何获取 Open ID](https://open.feishu.cn/document/uAjLw4CM/ugTN1YjL4UTN24CO1UjN/trouble-shooting/how-to-obtain-openid)<br>- union_id：标识一个用户在某个应用开发商下的身份。同一用户在同一开发商下的应用中的 Union ID 是相同的，在不同开发商下的应用中的 Union ID 是不同的。通过 Union ID，应用开发商可以把同个用户在多个应用中的身份关联起来。[了解更多：如何获取 Union ID？](https://open.feishu.cn/document/uAjLw4CM/ugTN1YjL4UTN24CO1UjN/trouble-shooting/how-to-obtain-union-id)<br>- user_id：标识一个用户在某个租户内的身份。同一个用户在租户 A 和租户 B 内的 User ID 是不同的。在同一个租户内，一个用户的 User ID 在所有应用（包括商店应用）中都保持一致。User ID 主要用于在不同的应用间打通用户数据。[了解更多：如何获取 User ID？](https://open.feishu.cn/document/uAjLw4CM/ugTN1YjL4UTN24CO1UjN/trouble-shooting/how-to-obtain-user-id)<br>**默认值**：`open_id`<br>**当值为 `user_id`，字段权限要求**：<br>获取用户 user ID(contact:user.employee_id:readonly)
+ignore_consistency_check | boolean | 否 | 是否忽略一致性读写检查，默认为 false，即在进行读写操作时，系统将确保读取到的数据和写入的数据是一致的。可选值：<br>- true：忽略读写一致性检查，提高性能，但可能会导致某些节点的数据不同步，出现暂时不一致<br>- false：开启读写一致性检查，确保数据在读写过程中一致<br>**示例值**：true
+
+### 请求体
+
+名称 | 类型 | 必填 | 描述
+---|---|---|---
+records | app.table.record\[\] | 是 | 要更新的记录
+fields | map&lt;string, union&gt; | 是 | 要更新的记录的数据。你需先指定数据表中的字段（即指定列），再传入正确格式的数据作为一条记录。<br>**注意**：<br>该接口支持的字段类型及其描述如下所示：<br>- 文本：原值展示，不支持 markdown 语法<br>- 数字：填写数字格式的值<br>- 单选：填写选项值，对于新的选项值，将会创建一个新的选项<br>- 多选：填写多个选项值，对于新的选项值，将会创建一个新的选项。如果填写多个相同的新选项值，将会创建多个相同的选项<br>- 日期：填写毫秒级时间戳<br>- 复选框：填写 true 或 false<br>- 条码<br>- 人员：填写用户的 open_id、union_id 或 user_id，类型需要与 user_id_type 指定的类型一致<br>- 电话号码：填写文本内容<br>- 超链接：参考以下示例，text 为文本值，link 为 URL 链接<br>- 附件：填写附件 token，需要先调用[上传素材](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/drive-v1/media/upload_all)或[分片上传素材](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/drive-v1/media/upload_prepare)接口将附件上传至该多维表格中<br>- 单向关联：填写被关联表的记录 ID<br>- 双向关联：填写被关联表的记录 ID<br>- 地理位置：填写经纬度坐标<br>不同类型字段的数据结构请参考[数据结构概述](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/bitable/development-guide/bitable-structure)。<br>**示例值**：{"多行文本":"HelloWorld"}
+record_id | string | 否 | 数据表中一条记录的唯一标识。通过[查询记录](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-record/search)接口获取。该参数必填，请忽略左侧必填列的“否”<br>**示例值**："recqwIwhc6"
+shared_url | string | 否 | 记录分享链接，本接口中该参数无效，请忽略<br>**示例值**："https://www.example.com/record/WVoXrzIaqeorcJcHgzAcg8AQnNd"
+record_url | string | 否 | 记录链接。本接口中该参数无效，请忽略<br>**示例值**："https://www.example.com/record/WVoXrzIaqeorcJcHgzAcg8AQnNd"
+
+### 请求体示例
+```json
+{
+    "records": [
+        {
+            "record_id": "reclAqylTN",
+            "fields": {
+                "索引": "索引列多行文本类型",
+                "多行文本": "多行文本内容",
+                "数字": 100,
+                "单选": "选项3",
+                "多选": [
+                    "选项1",
+                    "选项2"
+                ],
+                "日期": 1674206443000,
+                "条码": "qawqe",
+                "复选框": true,
+                "人员": [
+                    {
+                        "id": "ou_2910013f1e6456f16a0ce75ede950a0a"
+                    },
+                    {
+                        "id": "ou_e04138c9633dd0d2ea166d79f548ab5d"
+                    }
+                ],
+                "群组": [
+                    {
+                        "id": "oc_cd07f55f14d6f4a4f1b51504e7e97f48"
+                    }
+                ],
+                "电话号码": "13026162666",
+                "超链接": {
+                    "text": "飞书多维表格官网",
+                    "link": "https://www.feishu.cn/product/base"
+                },
+                "附件": [
+                    {
+                        "file_token": "Vl3FbVkvnowlgpxpqsAbBrtFcrd"
+                    }
+                ],
+                "单向关联": [
+                    "recHTLvO7x",
+                    "recbS8zb2m"
+                ],
+                "双向关联": [
+                    "recHTLvO7x",
+                    "recbS8zb2m"
+                ],
+                "地理位置": "116.397755,39.903179",
+                "评分": 3,
+                "货币": 3,
+                "进度": 0.25
+            }
+        }
+    ]
+}
+```
+
+## 响应
+
+### 响应体
+
+名称 | 类型 | 描述
+---|---|---
+code | int | 错误码，非 0 表示失败
+msg | string | 错误描述
+data | \- | \-
+records | app.table.record\[\] | 记录更新后的内容
+fields | map&lt;string, union&gt; | 成功更新的记录的数据
+record_id | string | 更新记录的 ID
+created_by | person | 该记录的创建人。本接口不返回该参数
+id | string | 用户 ID，ID 类型与 `user_id_type` 所指定的类型一致
+name | string | 用户的中文名称
+en_name | string | 用户的英文名称
+email | string | 用户的邮箱
+avatar_url | string | 头像链接<br>**字段权限要求（满足任一）**：<br>获取用户基本信息(contact:user.base:readonly)<br>以应用身份访问通讯录(contact:contact:access_as_app)<br>读取通讯录(contact:contact:readonly)<br>以应用身份读取通讯录(contact:contact:readonly_as_app)
+created_time | int | 该记录的创建时间。本接口不返回该参数
+last_modified_by | person | 该记录最新一次更新的修改人。本接口不返回该参数
+id | string | 用户 ID，ID 类型与 `user_id_type` 所指定的类型一致
+name | string | 用户的中文名称
+en_name | string | 用户的英文名称
+email | string | 用户的邮箱
+avatar_url | string | 头像链接<br>**字段权限要求（满足任一）**：<br>获取用户基本信息(contact:user.base:readonly)<br>以应用身份访问通讯录(contact:contact:access_as_app)<br>读取通讯录(contact:contact:readonly)<br>以应用身份读取通讯录(contact:contact:readonly_as_app)
+last_modified_time | int | 该记录最近一次的更新时间。本接口不返回该参数
+shared_url | string | 记录分享链接。本接口不返回该参数，批量获取记录接口将返回该参数
+record_url | string | 记录链接。本接口不返回该参数，批量获取记录接口将返回该参数
+
+### 响应体示例
+```json
+{
+    "code": 0,
+    "data": {
+        "records": [
+            {
+                "fields": {
+                    "人员": [
+                        {
+                            "id": "ou_2910013f1e6456f16a0ce75ede950a0a"
+                        },
+                        {
+                            "id": "ou_e04138c9633dd0d2ea166d79f548ab5d"
+                        }
+                    ],
+                    "群组": [
+                        {
+                            "id": "oc_cd07f55f14d6f4a4f1b51504e7e97f48"
+                        }
+                    ],
+                    "单向关联": [
+                        "recHTLvO7x",
+                        "recbS8zb2m"
+                    ],
+                    "单选": "选项3",
+                    "双向关联": [
+                        "recHTLvO7x",
+                        "recbS8zb2m"
+                    ],
+                    "地理位置": "116.397755,39.903179",
+                    "复选框": true,
+                    "多行文本": "多行文本内容",
+                    "多选": [
+                        "选项1",
+                        "选项2"
+                    ],
+                    "数字": 100,
+                    "日期": 1674206443000,
+                    "条码": "qawqe",
+                    "电话号码": "13026162666",
+                    "索引": "索引列多行文本类型",
+                    "超链接": {
+                        "link": "https://www.feishu.cn/product/base",
+                        "text": "飞书多维表格官网"
+                    },
+                    "附件": [
+                        {
+                            "file_token": "Vl3FbVkvnowlgpxpqsAbBrtFcrd"
+                        }
+                    ],
+                    "评分": 3,
+                    "货币": 3,
+                    "进度": 0.25
+                },
+                "id": "reclAqylTN",
+                "record_id": "reclAqylTN"
+            }
+        ]
+    },
+    "msg": "success"
+}
+```
+
+### 错误码
+
+HTTP状态码 | 错误码 | 描述 | 排查建议
+---|---|---|---
+200 | 1254000 | WrongRequestJson | 请求体错误
+200 | 1254001 | WrongRequestBody | 请求体错误
+200 | 1254002 | Fail | 导致报 1254002 错误码的场景较多，请参考以下建议排查：<br>- 如果单次操作的内容变更较大，请尝试在单次操作中减少数据量<br>- 如果你并发调用了接口，请尝试控制请求间隔，稍后重试<br>- 如果在知识库（wiki）中创建多维表格，请检查你是否使用了知识库[创建知识空间节点](https://open.feishu.cn/document/ukTMukTMukTM/uUDN04SN0QjL1QDN/wiki-v2/space-node/create)接口创建多维表格。在此场景下不能使用[创建多维表格](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app/create)接口<br>- 请检查接口参数是否有误。例如，在分页查询多维表格时，传递了无效的 page_token，或传递了错误的数据表的 table_id<br>- 如果该报错偶尔发生，可能是服务器超时或不稳定，请重试解决
+200 | 1254003 | WrongBaseToken | app_token 错误。app_token 是多维表格 App 的唯一标识。不同形态的多维表格，其 `app_token` 的获取方式不同：<br>- 如果多维表格的 URL 以 ==**feishu.cn/base**== 开头，该多维表格的 `app_token` 是下图高亮部分：<br>![app_token.png](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/6916f8cfac4045ba6585b90e3afdfb0a_GxbfkJHZBa.png?height=766&lazyload=true&width=3004)<br>- 如果多维表格的 URL 以 ==**feishu.cn/wiki**== 开头，你需调用知识库相关[获取知识空间节点信息](https://open.feishu.cn/document/ukTMukTMukTM/uUDN04SN0QjL1QDN/wiki-v2/space/get_node)接口获取多维表格的 app_token。当 `obj_type` 的值为 `bitable` 时，`obj_token` 字段的值才是多维表格的 `app_token`。<br>了解更多，参考[多维表格 app_token 获取方式](https://open.feishu.cn/document/ukTMukTMukTM/uUDN04SN0QjL1QDN/bitable-overview#-752212c)。
+200 | 1254004 | WrongTableId | table_id 错误。table_id 是多维表格数据表的唯一标识。获取方式：<br>- 你可通过多维表格 URL 获取 `table_id`，下图高亮部分即为当前数据表的 `table_id`<br>- 也可通过[列出数据表](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table/list)接口获取 `table_id`<br>![](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/18741fe2a0d3cafafaf9949b263bb57d_yD1wkOrSju.png?height=746&lazyload=true&maxWidth=700&width=2976)
+200 | 1254005 | WrongViewId | view_id 错误。view_id 是多维表格中视图的唯一标识。获取方式：<br>- 在多维表格的 URL 地址栏中，`view_id` 是下图中高亮部分：<br>![view_id.png](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/140668632c97e0095832219001d17c54_DJMgVH9x2S.png?height=748&lazyload=true&width=2998)<br>- 通过[列出视图](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-view/list)接口获取。暂时无法获取到嵌入到云文档中的多维表格的 `view_id`。<br>**注意**：<br>当 `filter` 参数 或 `sort` 参数不为空时，请求视为对数据表中的全部数据做条件过滤，指定的 `view_id` 会被忽略。
+200 | 1254006 | WrongRecordId | record_id 错误。record_id 是数据表中一条记录的唯一标识。通过[查询记录](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-record/search)接口获取
+200 | 1254007 | EmptyValue | 空值
+200 | 1254008 | EmptyView | 空视图
+200 | 1254009 | WrongFieldId | field_id 错误。field_id 是数据表中一个字段的唯一标识。通过[列出字段](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-field/list)接口获取
+200 | 1254010 | ReqConvError | 请求错误
+400 | 1254015 | Field types do not match. | 字段类型不匹配，请检查传入的记录内容是否符合对应字段类型的格式要求
+403 | 1254027 | UploadAttachNotAllowed | 附件未挂载, 禁止上传
+200 | 1254030 | TooLargeResponse | 响应体过大
+400 | 1254036 | Base is copying, please try again later. | 复制多维表格为异步操作，该错误码表示当前多维表格仍在复制中，在复制期间无法操作当前多维表格。需要等待复制完成后再操作
+200 | 1254040 | BaseTokenNotFound | app_token 不存在。不同形态的多维表格，其 `app_token` 的获取方式不同：<br>- 如果多维表格的 URL 以 ==**feishu.cn/base**== 开头，该多维表格的 `app_token` 是下图高亮部分：<br>![app_token.png](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/6916f8cfac4045ba6585b90e3afdfb0a_GxbfkJHZBa.png?height=766&lazyload=true&width=3004)<br>- 如果多维表格的 URL 以 ==**feishu.cn/wiki**== 开头，你需调用知识库相关[获取知识空间节点信息](https://open.feishu.cn/document/ukTMukTMukTM/uUDN04SN0QjL1QDN/wiki-v2/space/get_node)接口获取多维表格的 app_token。当 `obj_type` 的值为 `bitable` 时，`obj_token` 字段的值才是多维表格的 `app_token`。<br>了解更多，参考[多维表格 app_token 获取方式](https://open.feishu.cn/document/ukTMukTMukTM/uUDN04SN0QjL1QDN/bitable-overview#-752212c)。
+200 | 1254041 | TableIdNotFound | table_id 不存在。获取方式：<br>- 你可通过多维表格 URL 获取 `table_id`，下图高亮部分即为当前数据表的 `table_id`<br>- 也可通过[列出数据表](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table/list)接口获取 `table_id`<br>![](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/18741fe2a0d3cafafaf9949b263bb57d_yD1wkOrSju.png?height=746&lazyload=true&maxWidth=700&width=2976)
+200 | 1254042 | ViewIdNotFound | view_id 不存在。获取方式：<br>- 在多维表格的 URL 地址栏中，`view_id` 是下图中高亮部分：<br>![view_id.png](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/140668632c97e0095832219001d17c54_DJMgVH9x2S.png?height=748&lazyload=true&width=2998)<br>- 通过[列出视图](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-view/list)接口获取。暂时无法获取到嵌入到云文档中的多维表格的 `view_id`。<br>**注意**：<br>当 `filter` 参数 或 `sort` 参数不为空时，请求视为对数据表中的全部数据做条件过滤，指定的 `view_id` 会被忽略。
+200 | 1254043 | RecordIdNotFound | record_id 不存在。record_id 是数据表中一条记录的唯一标识。请通过[查询记录](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-record/search)接口获取
+200 | 1254044 | FieldIdNotFound | field_id  不存在。field_id  是数据表中一个字段的唯一标识。通过[列出字段](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-field/list)接口获取
+200 | 1254045 | FieldNameNotFound | 字段名称不存在。请检查：<br>- 接口中字段名称和多维表格中的字段名称是否完全匹配。如果难以排查，建议你调用[列出字段](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-field/list)接口获取字段名称，因为根据表格页面的 UI 名称可能会忽略空格、换行或特殊符号等差异。<br>- 表格是否开启了高级权限但调用身份缺少对应字段的权限。你需要为调用身份授予高级权限：<br>- 对用户授予高级权限，你需要在多维表格页面右上方 **分享** 入口为当前用户添加可管理权限。![image.png](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/df3911b4f747d75914f35a46962d667d_dAsfLjv3QC.png?height=546&lazyload=true&maxWidth=550)<br>- 对应用授予高级权限，你需通过多维表格页面右上方 **「...」** -> **「...更多」** ->**「添加文档应用」** 入口为应用添加可管理权限。<br>![](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/22c027f63c540592d3ca8f41d48bb107_CSas7OYJBR.png?height=1994&maxWidth=550&width=3278)<br>![image.png](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/9f3353931fafeea16a39f0eb887db175_0tjzC9P3zU.png?maxWidth=550)<br>**注意**：<br>在 **添加文档应用** 前，你需确保目标应用至少开通了一个多维表格的 [API 权限](https://open.feishu.cn/document/ukTMukTMukTM/uYTM5UjL2ETO14iNxkTN/scope-list)。否则你将无法在文档应用窗口搜索到目标应用。    <br>- 你也可以在 **多维表格高级权限设置** 中添加用户或一个包含应用的群组, 给予这个群自定义的读写等权限。
+200 | 1254060 | TextFieldConvFail | 多行文本字段错误
+200 | 1254061 | NumberFieldConvFail | 数字字段错误
+200 | 1254062 | SingleSelectFieldConvFail | 单选字段错误
+200 | 1254063 | MultiSelectFieldConvFail | 多选字段错误
+200 | 1254064 | DatetimeFieldConvFail | 日期字段错误
+200 | 1254065 | CheckboxFieldConvFail | 复选框字段错误
+200 | 1254066 | UserFieldConvFail | 人员字段有误。原因可能是：<br>- `user_id_type` 参数指定的 ID 类型与传入的 ID 类型不匹配<br>- 传入了不识别的类型或结构，目前只支持填写 `id` 参数，且需要传入数组<br>- 跨应用传入了 `open_id`。如果跨应用传入 ID，建议使用 `user_id`。不同应用获取的 `open_id` 不能交叉使用<br>- 若想对人员字段传空，可传 null
+200 | 1254067 | LinkFieldConvFail | 关联字段错误
+200 | 1254068 | URLFieldConvFail | 超链接字段错误
+200 | 1254069 | AttachFieldConvFail | 附件字段错误
+200 | 1254072 | InvalidPhoneNumber | 转换手机号码格式失败，请检查传入的手机号码格式是否正确
+400 | 1254074 | DuplexLinkFieldConvFail | 参数无效，需要使用字符串数组
+200 | 1254100 | TableExceedLimit | 数据表或仪表盘数量超限。每个多维表格中，数据表加仪表盘的数量最多为 100 个
+200 | 1254101 | ViewExceedLimit | 视图数量超限, 限制200个
+200 | 1254102 | FileExceedLimit | 文件数量超限
+200 | 1254103 | RecordExceedLimit | 记录数量超限, 限制20,000条
+200 | 1254104 | RecordAddOnceExceedLimit | 单次添加记录数量超限, 单次调用最多更新 1,000 条记录
+200 | 1254105 | ColumnExceedLimit | 字段数量超限
+200 | 1254106 | AttachExceedLimit | 附件过多
+200 | 1254130 | TooLargeCell | 格子内容过大
+200 | 1254290 | TooManyRequest | 请求过快，稍后重试
+200 | 1254291 | Write conflict | 在同一个数据表中，并发调用了读写接口或请求过快，出现冲突。请参考以下建议解决：<br>- 确保没有并发调用多维表格读写相关接口<br>- 若操作量较大，建议在接口与接口之间增加 0.5 或 1 秒的延迟，也可在报错中增加重试逻辑，确保业务的稳定性<br>- 对于写接口，可以将接口中的查询参数 `ignore_consistency_check` 设置为 true，表示在读写操作时，暂时忽略一致性检查，以提高性能
+200 | 1254301 | OperationTypeError | 多维表格未开启高级权限或不支持开启高级权限
+403 | 1254303 | AttachPermNotAllow | 没有写入附件至多维表格的权限。要在多维表格中写入附件，你需先调用[上传素材](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/drive-v1/media/upload_all)接口，将附件上传到当前多维表格中，再新增记录
+200 | 1255001 | InternalError | 内部错误，请联系[技术支持](https://applink.feishu.cn/TLJpeNdW)
+200 | 1255002 | RpcError | 内部错误，请联系[技术支持](https://applink.feishu.cn/TLJpeNdW)
+200 | 1255003 | MarshalError | 序列化错误，请联系[技术支持](https://applink.feishu.cn/TLJpeNdW)
+200 | 1255004 | UmMarshalError | 反序列化错误
+200 | 1255005 | ConvError | 内部错误，请联系[技术支持](https://applink.feishu.cn/TLJpeNdW)
+504 | 1255040 | 请求超时 | 进行重试
+400 | 1254607 | Data not ready, please try again later | 该报错一般是由于前置操作未执行完成，或本次操作数据太大，服务器计算超时导致。遇到该错误码时，建议等待一段时间后重试。通常有以下几种原因：<br>- **编辑操作频繁**：开发者对多维表格的编辑操作非常频繁。可能会导致由于等待前置操作处理完成耗时过长而超时的情况。多维表格底层对数据表的处理基于版本维度的串行方式，不支持并发。因此，并发请求时容易出现此类错误，不建议开发者对单个数据表进行并发请求。<br>- **批量操作负载重**：开发者在多维表格中进行批量新增、删除等操作时，如果数据表的数据量非常大，可能会导致单次请求耗时过长，最终导致请求超时。建议开发者适当降低批量请求的 page_size 以减少请求耗时。<br>- **资源分配与计算开销**：资源分配是基于单文档维度的，如果读接口涉及公式计算、排序等计算逻辑，会占用较多资源。例如，并发读取一个文档下的多个数据表也可能导致该文档阻塞。
+403 | 1254302 | Permission denied. | 调用身份缺少多维表格的高级权限。你需要为调用身份授予高级权限：<br>- 对用户授予高级权限，你需要在多维表格页面右上方 **分享** 入口为当前用户添加可管理权限。![image.png](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/df3911b4f747d75914f35a46962d667d_dAsfLjv3QC.png?height=546&lazyload=true&maxWidth=550)<br>- 对应用授予高级权限，你需通过多维表格页面右上方 **「...」** -> **「...更多」** ->**「添加文档应用」** 入口为应用添加可管理权限。<br>![](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/22c027f63c540592d3ca8f41d48bb107_CSas7OYJBR.png?height=1994&maxWidth=550&width=3278)<br>![image.png](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/9f3353931fafeea16a39f0eb887db175_0tjzC9P3zU.png?maxWidth=550)<br>**注意**：<br>在 **添加文档应用** 前，你需确保目标应用至少开通了一个多维表格的 [API 权限](https://open.feishu.cn/document/ukTMukTMukTM/uYTM5UjL2ETO14iNxkTN/scope-list)。否则你将无法在文档应用窗口搜索到目标应用。    <br>- 你也可以在 **多维表格高级权限设置** 中添加用户或一个包含应用的群组, 给予这个群自定义的读写等权限。
+403 | 1254304 | Permission denied. | 权限不足。请检查多维表格是否开启了高级权限，如果开启高级权限，调用身份需要有多维表格的可管理权限
+403 | 1254608 | ReqRecommited | 基于同一个多维表格版本重复提交了更新请求（传入了相同的 client_token），常见于并发或时间间隔极短的请求，例如并发将一个视图的信息更新为相同的内容。建议稍后重试
+# 批量获取记录
+
+通过多个记录 ID 查询记录信息。该接口最多支持查询 100 条记录。
+
+## 注意事项
+
+若多维表格开启了高级权限，你需确保调用身份拥有多维表格的可管理权限，否则可能出现调用成功但返回数据为空的情况。了解具体步骤，参考[如何为应用或用户开通文档权限](https://open.feishu.cn/document/ukTMukTMukTM/uczNzUjL3czM14yN3MTN#16c6475a)。
+
+## 请求
+
+基本 | 
+---|---
+HTTP URL | https://open.feishu.cn/open-apis/bitable/v1/apps/:app_token/tables/:table_id/records/batch_get
+HTTP Method | POST
+接口频率限制 | [20 次/秒](https://open.feishu.cn/document/ukTMukTMukTM/uUzN04SN3QjL1cDN)
+支持的应用类型 | Custom App、Store App
+权限要求<br>**调用该 API 所需的权限。开启其中任意一项权限即可调用**<br>开启任一权限即可 | 检索特定记录(base:record:read)<br>查看、评论、编辑和管理多维表格(bitable:app)<br>查看、评论和导出多维表格(bitable:app:readonly)
+字段权限要求 | **注意事项**：该接口返回体中存在下列敏感字段，仅当开启对应的权限后才会返回；如果无需获取这些字段，则不建议申请<br>获取用户基本信息(contact:user.base:readonly)<br>以应用身份访问通讯录(contact:contact:access_as_app)<br>读取通讯录(contact:contact:readonly)<br>以应用身份读取通讯录(contact:contact:readonly_as_app)
+
+### 请求头
+
+名称 | 类型 | 必填 | 描述
+---|---|---|---
+Authorization | string | 是 | `tenant_access_token`<br>或<br>`user_access_token`<br>**值格式**："Bearer `access_token`"<br>**示例值**："Bearer u-7f1bcd13fc57d46bac21793a18e560"<br>[了解更多：如何选择与获取 access token](https://open.feishu.cn/document/uAjLw4CM/ugTN1YjL4UTN24CO1UjN/trouble-shooting/how-to-choose-which-type-of-token-to-use)
+Content-Type | string | 是 | **固定值**："application/json; charset=utf-8"
+
+### 路径参数
+
+名称 | 类型 | 描述
+---|---|---
+app_token | string | 多维表格 App 的唯一标识。不同形态的多维表格，其 `app_token` 的获取方式不同：<br>- 如果多维表格的 URL 以 ==**feishu.cn/base**== 开头，该多维表格的 `app_token` 是下图高亮部分：<br>![app_token.png](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/6916f8cfac4045ba6585b90e3afdfb0a_GxbfkJHZBa.png?height=766&lazyload=true&width=3004)<br>- 如果多维表格的 URL 以 ==**feishu.cn/wiki**== 开头，你需调用知识库相关[获取知识空间节点信息](https://open.feishu.cn/document/ukTMukTMukTM/uUDN04SN0QjL1QDN/wiki-v2/space/get_node)接口获取多维表格的 app_token。当 `obj_type` 的值为 `bitable` 时，`obj_token` 字段的值才是多维表格的 `app_token`。<br>了解更多，参考[多维表格 app_token 获取方式](https://open.feishu.cn/document/ukTMukTMukTM/uUDN04SN0QjL1QDN/bitable-overview#-752212c)。<br>**示例值**："NQRxbRkBMa6OnZsjtERcxhabcef"<br>**数据校验规则**：<br>- 长度范围：`0` ～ `100` 字符
+table_id | string | 多维表格数据表的唯一标识。获取方式：<br>- 你可通过多维表格 URL 获取 `table_id`，下图高亮部分即为当前数据表的 `table_id`<br>- 也可通过[列出数据表](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table/list)接口获取 `table_id`<br>![](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/18741fe2a0d3cafafaf9949b263bb57d_yD1wkOrSju.png?height=746&lazyload=true&maxWidth=700&width=2976)<br>**示例值**："tbl0xe5g8PPabcef"<br>**数据校验规则**：<br>- 长度范围：`0` ～ `50` 字符
+
+### 请求体
+
+名称 | 类型 | 必填 | 描述
+---|---|---|---
+record_ids | string\[\] | 是 | 记录 ID 列表。调用[查询记录](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-record/search)获取。<br>**示例值**：["recyO3299N"]<br>**数据校验规则**：<br>- 长度范围：`1` ～ `100`
+user_id_type | string | 否 | 此次调用中使用的用户 id 的类型<br>**示例值**："open_id"<br>**可选值有**：<br>- user_id：以user_id来识别用户<br>- union_id：以union_id来识别用户<br>- open_id：以open_id来识别用户
+with_shared_url | boolean | 否 | 是否返回记录的分享链接。可选值：<br>- true：返回分享链接<br>- false：不返回分享链接<br>**默认值**：false<br>**示例值**：true
+automatic_fields | boolean | 否 | 是否返回自动计算的字段。可选值：<br>- true：返回自动计算的字段<br>- false：不返回自动计算的字段<br>**默认值**：false<br>**示例值**：true
+
+### 请求体示例
+```json
+{
+  "record_ids": [
+    "recyOaMB2F",
+    "rec111111",
+    "recyOaMB2F"
+  ],
+  "user_id_type": "open_id",
+  "with_shared_url": true,
+  "automatic_fields": true
+}
+```
+
+## 响应
+
+### 响应体
+
+名称 | 类型 | 描述
+---|---|---
+code | int | 错误码，非 0 表示失败
+msg | string | 错误描述
+data | \- | \-
+records | app.table.record\[\] | 记录列表
+fields | map&lt;string, union&gt; | 记录字段
+record_id | string | 记录 ID
+created_by | person | 创建人信息
+id | string | 创建人 ID。ID 类型与请求体中的 `user_id_type` 指定的类型一致。
+name | string | 创建人中文姓名
+en_name | string | 创建人英文姓名
+email | string | 创建人邮箱
+avatar_url | string | 创建人头像链接<br>**字段权限要求（满足任一）**：<br>获取用户基本信息(contact:user.base:readonly)<br>以应用身份访问通讯录(contact:contact:access_as_app)<br>读取通讯录(contact:contact:readonly)<br>以应用身份读取通讯录(contact:contact:readonly_as_app)
+created_time | int | 创建时间。毫秒级时间戳。
+last_modified_by | person | 修改人信息
+id | string | 修改人 ID。ID 类型与请求体中的 `user_id_type` 指定的类型一致。
+name | string | 修改人中文姓名
+en_name | string | 修改人英文姓名
+email | string | 修改人邮箱
+avatar_url | string | 修改人头像链接<br>**字段权限要求（满足任一）**：<br>获取用户基本信息(contact:user.base:readonly)<br>以应用身份访问通讯录(contact:contact:access_as_app)<br>读取通讯录(contact:contact:readonly)<br>以应用身份读取通讯录(contact:contact:readonly_as_app)
+last_modified_time | int | 最近更新时间。毫秒级时间戳。
+shared_url | string | 记录分享链接
+record_url | string | 记录链接（检索记录接口将返回该字段，本接口不返回）
+forbidden_record_ids | string\[\] | 禁止访问的记录列表（针对开启了高级权限的多维表格）
+absent_record_ids | string\[\] | 不存在的记录列表
+
+### 响应体示例
+```json
+{
+  "code": 0,
+  "msg": "success",
+  "data": {
+    "forbidden_record_ids": [
+      "recyOaMB2F"
+    ],
+    "absent_record_ids": [
+      "rec111111"
+    ],
+    "records": [
+      {
+        "created_by": {
+          "avatar_url": "https://internal-api-lark-file.feishu.cn/static-resource/v1/06d568cb-f464-4c2e-bd03-76512c545c5j~?image_size=72x72&amp;cut_type=default-face&amp;quality=&amp;format=jpeg&amp;sticker_format=.webp",
+          "email": "",
+          "en_name": "Min Zhang",
+          "id": "ou_92945f86a98bba075174776959c90eda",
+          "name": "张敏"
+        },
+        "created_time": 1691049973000,
+        "fields": {
+          "人员": [
+            {
+              "avatar_url": "https://internal-api-lark-file.feishu.cn/static-resource/v1/b2-7619-4b8a-b27b-c72d90b06a2j~?image_size=72x72&amp;cut_type=default-face&amp;quality=&amp;format=jpeg&amp;sticker_format=.webp",
+              "email": "minzhang.leben@bytedance.com",
+              "en_name": "Min Zhang",
+              "id": "ou_2910013f1e6456f16a0ce75ede950a0a",
+              "name": "张敏"
+            },
+            {
+              "avatar_url": "https://internal-api-lark-file.feishu.cn/static-resource/v1/v2_q86-fcb6-4f18-85c7-87ca8881e50j~?image_size=72x72&amp;cut_type=default-face&amp;quality=&amp;format=jpeg&amp;sticker_format=.webp",
+              "email": "minzhang.00@bytedance.com",
+              "en_name": "Min Zhang",
+              "id": "ou_e04138c9633dd0d2ea166d79f548ab5d",
+              "name": "张敏"
+            }
+          ],
+          "修改人": [
+            {
+              "avatar_url": "https://internal-api-lark-file.feishu.cn/static-resource/v1/06d568cb-f464-4c2e-bd03-76512c545c5j~?image_size=72x72&amp;cut_type=default-face&amp;quality=&amp;format=jpeg&amp;sticker_format=.webp",
+              "email": "",
+              "en_name": "Min Zhang",
+              "id": "ou_92945f86a98bba075174776959c90eda",
+              "name": "张敏"
+            }
+          ],
+          "创建人": [
+            {
+              "avatar_url": "https://internal-api-lark-file.feishu.cn/static-resource/v1/06d568cb-f464-4c2e-bd03-76512c545c5j~?image_size=72x72&amp;cut_type=default-face&amp;quality=&amp;format=jpeg&amp;sticker_format=.webp",
+              "email": "",
+              "en_name": "Min Zhang",
+              "id": "ou_92945f86a98bba075174776959c90eda",
+              "name": "张敏"
+            }
+          ],
+          "创建时间": 1691049973000,
+          "单向关联": {
+            "link_record_ids": [
+              "recnVYsuqV"
+            ]
+          },
+          "单选": "选项1",
+          "双向关联": {
+            "link_record_ids": [
+              "recqLvMaXT",
+              "recrdld32q"
+            ]
+          },
+          "地理位置": {
+            "address": "东长安街",
+            "adname": "东城区",
+            "cityname": "北京市",
+            "full_address": "天安门广场，北京市东城区东长安街",
+            "location": "116.397755,39.903179",
+            "name": "天安门广场",
+            "pname": "北京市"
+          },
+          "复选框": true,
+          "多行文本": [
+            {
+              "text": "多行文本内容1",
+              "type": "text"
+            },
+            {
+              "mentionNotify": false,
+              "mentionType": "User",
+              "name": "张敏",
+              "text": "@张敏",
+              "token": "ou_2910013f1e6456f16a0ce75ede950a0a",
+              "type": "mention"
+            }
+          ],
+          "多选": [
+            "选项1",
+            "选项2"
+          ],
+          "数字": 2323.2323,
+          "日期": 1690992000000,
+          "最后更新时间": 1702455191000,
+          "条码": [
+            {
+              "text": "123",
+              "type": "text"
+            }
+          ],
+          "电话号码": "131xxxx6666",
+          "自动编号": "17",
+          "群组": [
+            {
+              "avatar_url": "https://internal-api-lark-file.feishu-boe.cn/static-resource/v1/v2_c8d2cd50-ba29-476f-b7f1-5b5917cb18ej~?image_size=72x72&amp;cut_type=&amp;quality=&amp;format=jpeg&amp;sticker_format=.webp",
+              "id": "oc_cd07f55f14d6f4a4f1b51504e7e97f48",
+              "name": "武侠聊天组"
+            }
+          ],
+          "评分": 3,
+          "货币": 1,
+          "超链接": {
+            "link": "https://bitable.feishu.cn",
+            "text": "飞书多维表格官网"
+          },
+          "进度": 0.66,
+          "附件": [
+            {
+              "file_token": "Vl3FbVkvnowlgpxpqsAbBrtFcrd",
+              "name": "飞书.jpeg",
+              "size": 32975,
+              "tmp_url": "https://open.feishu.cn/open-apis/drive/v1/medias/batch_get_tmp_download_url?file_tokens=Vl3FbVk11owlgpxpqsAbBrtFcrd&amp;extra=%7B%22bitablePerm%22%3A%7B%22tableId%22%3A%22tblBJyX6jZteblYv%22%2C%22rev%22%3A90%7D%7D",
+              "type": "image/jpeg",
+              "url": "https://open.feishu.cn/open-apis/drive/v1/medias/Vl3FbVk11owlgpxpqsAbBrtFcrd/download?extra=%7B%22bitablePerm%22%3A%7B%22tableId%22%3A%22tblBJyX6jZteblYv%22%2C%22rev%22%3A90%7D%7D"
+            }
+          ]
+        },
+        "last_modified_by": {
+          "avatar_url": "https://internal-api-lark-file.feishu.cn/static-resource/v1/06d568cb-f464-4c2e-bd03-76512c545c5j~?image_size=72x72&amp;cut_type=default-face&amp;quality=&amp;format=jpeg&amp;sticker_format=.webp",
+          "email": "",
+          "en_name": "Min Zhang",
+          "id": "ou_92945f86a98bba075174776959c90eda",
+          "name": "张敏"
+        },
+        "last_modified_time": 1702455191000,
+        "record_id": "recyOaMB2F",
+        "shared_url": "https://example.feishu.cn/record/KBcNrNtpWePAlscCvdmb6ZcSc5b"
+      }
+    ]
+  }
+}
+```
+
+### 错误码
+
+HTTP状态码 | 错误码 | 描述 | 排查建议
+---|---|---|---
+400 | 1254000 | WrongRequestJson | 请求体错误。请检查请求参数
+400 | 1254001 | WrongRequestBody | 请求体错误。请检查请求参数
+500 | 1254002 | Fail | 导致报 1254002 错误码的场景较多，请参考以下建议排查：<br>- 如果单次操作的内容变更较大，请尝试在单次操作中减少数据量<br>- 如果你并发调用了接口，请尝试控制请求间隔，稍后重试<br>- 如果在知识库（wiki）中创建多维表格，请检查你是否使用了知识库[创建知识空间节点](https://open.feishu.cn/document/ukTMukTMukTM/uUDN04SN0QjL1QDN/wiki-v2/space-node/create)接口创建多维表格。在此场景下不能使用[创建多维表格](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app/create)接口<br>- 请检查接口参数是否有误。例如，在分页查询多维表格时，传递了无效的 page_token，或传递了错误的数据表的 table_id<br>- 如果该报错偶尔发生，可能是服务器超时或不稳定，请重试解决
+400 | 1254003 | WrongBaseToken | app_token 错误。app_token 是多维表格 App 的唯一标识。不同形态的多维表格，其 `app_token` 的获取方式不同：<br>- 如果多维表格的 URL 以 ==**feishu.cn/base**== 开头，该多维表格的 `app_token` 是下图高亮部分：<br>![app_token.png](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/6916f8cfac4045ba6585b90e3afdfb0a_GxbfkJHZBa.png?height=766&lazyload=true&width=3004)<br>- 如果多维表格的 URL 以 ==**feishu.cn/wiki**== 开头，你需调用知识库相关[获取知识空间节点信息](https://open.feishu.cn/document/ukTMukTMukTM/uUDN04SN0QjL1QDN/wiki-v2/space/get_node)接口获取多维表格的 app_token。当 `obj_type` 的值为 `bitable` 时，`obj_token` 字段的值才是多维表格的 `app_token`。<br>了解更多，参考[多维表格 app_token 获取方式](https://open.feishu.cn/document/ukTMukTMukTM/uUDN04SN0QjL1QDN/bitable-overview#-752212c)。
+400 | 1254004 | WrongTableId | table_id 错误。table_id 是多维表格数据表的唯一标识。获取方式：<br>- 你可通过多维表格 URL 获取 `table_id`，下图高亮部分即为当前数据表的 `table_id`<br>- 也可通过[列出数据表](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table/list)接口获取 `table_id`<br>![](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/18741fe2a0d3cafafaf9949b263bb57d_yD1wkOrSju.png?height=746&lazyload=true&maxWidth=700&width=2976)
+400 | 1254005 | WrongViewId | view_id 错误。view_id 是多维表格中视图的唯一标识。获取方式：<br>- 在多维表格的 URL 地址栏中，`view_id` 是下图中高亮部分：<br>![view_id.png](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/140668632c97e0095832219001d17c54_DJMgVH9x2S.png?height=748&lazyload=true&width=2998)<br>- 通过[列出视图](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-view/list)接口获取。暂时无法获取到嵌入到云文档中的多维表格的 `view_id`。<br>**注意**：<br>当 `filter` 参数 或 `sort` 参数不为空时，请求视为对数据表中的全部数据做条件过滤，指定的 `view_id` 会被忽略。
+400 | 1254006 | WrongRecordId | record_id 错误。record_id 是数据表中一条记录的唯一标识。通过[查询记录](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-record/search)接口获取
+400 | 1254007 | EmptyValue | 空值
+400 | 1254008 | EmptyView | 空视图
+400 | 1254009 | WrongFieldId | field_id 错误。field_id 是数据表中一个字段的唯一标识。通过[列出字段](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-field/list)接口获取
+400 | 1254010 | ReqConvError | 请求错误
+400 | 1254011 | Page size must greater than 0. | page_size参数非法
+400 | 1254016 | InvalidSort | Sort参数错误
+400 | 1254018 | InvalidFilter | filter 参数错误。请参考[记录过滤参数填写指南](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-record/record-filter-guide)了解如何填写 filter 参数。
+400 | 1254024 | InvalidFieldNames | field_names 参数错误。请检查接口中字段名称和多维表格中的字段名称是否完全匹配。如果难以排查，建议你调用[列出字段](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-field/list)接口获取字段名称，因为根据表格页面的 UI 名称可能会忽略空格、换行或特殊符号等差异
+400 | 1254030 | InvalidPageToken | 分页游标错误
+400 | 1254036 | Bitable is copying, please try again later. | 复制多维表格为异步操作，该错误码表示当前多维表格仍在复制中，在复制期间无法操作当前多维表格。需要等待复制完成后再操作
+404 | 1254040 | BaseTokenNotFound | app_token 不存在。不同形态的多维表格，其 `app_token` 的获取方式不同：<br>- 如果多维表格的 URL 以 ==**feishu.cn/base**== 开头，该多维表格的 `app_token` 是下图高亮部分：<br>![app_token.png](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/6916f8cfac4045ba6585b90e3afdfb0a_GxbfkJHZBa.png?height=766&lazyload=true&width=3004)<br>- 如果多维表格的 URL 以 ==**feishu.cn/wiki**== 开头，你需调用知识库相关[获取知识空间节点信息](https://open.feishu.cn/document/ukTMukTMukTM/uUDN04SN0QjL1QDN/wiki-v2/space/get_node)接口获取多维表格的 app_token。当 `obj_type` 的值为 `bitable` 时，`obj_token` 字段的值才是多维表格的 `app_token`。<br>了解更多，参考[多维表格 app_token 获取方式](https://open.feishu.cn/document/ukTMukTMukTM/uUDN04SN0QjL1QDN/bitable-overview#-752212c)。
+404 | 1254041 | TableIdNotFound | table_id 不存在。获取方式：<br>- 你可通过多维表格 URL 获取 `table_id`，下图高亮部分即为当前数据表的 `table_id`<br>- 也可通过[列出数据表](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table/list)接口获取 `table_id`<br>![](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/18741fe2a0d3cafafaf9949b263bb57d_yD1wkOrSju.png?height=746&lazyload=true&maxWidth=700&width=2976)
+404 | 1254042 | ViewIdNotFound | view_id 不存在。获取方式：<br>- 在多维表格的 URL 地址栏中，`view_id` 是下图中高亮部分：<br>![view_id.png](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/140668632c97e0095832219001d17c54_DJMgVH9x2S.png?height=748&lazyload=true&width=2998)<br>- 通过[列出视图](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-view/list)接口获取。暂时无法获取到嵌入到云文档中的多维表格的 `view_id`。<br>**注意**：<br>当 `filter` 参数 或 `sort` 参数不为空时，请求视为对数据表中的全部数据做条件过滤，指定的 `view_id` 会被忽略。
+404 | 1254043 | RecordIdNotFound | record_id 不存在。record_id 是数据表中一条记录的唯一标识。请通过[查询记录](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-record/search)接口获取。
+404 | 1254044 | FieldIdNotFound | field_id  不存在。field_id  是数据表中一个字段的唯一标识。通过[列出字段](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-field/list)接口获取。
+404 | 1254045 | FieldNameNotFound | 字段名称不存在。请检查：<br>- 接口中字段名称和多维表格中的字段名称是否完全匹配。如果难以排查，建议你调用[列出字段](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-field/list)接口获取字段名称，因为根据表格页面的 UI 名称可能会忽略空格、换行或特殊符号等差异。<br>- 表格是否开启了高级权限但调用身份缺少对应字段的权限。你需要为调用身份授予高级权限：<br>- 对用户授予高级权限，你需要在多维表格页面右上方 **分享** 入口为当前用户添加可管理权限。![image.png](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/df3911b4f747d75914f35a46962d667d_dAsfLjv3QC.png?height=546&lazyload=true&maxWidth=550)<br>- 对应用授予高级权限，你需通过多维表格页面右上方 **「...」** -> **「...更多」** ->**「添加文档应用」** 入口为应用添加可管理权限。<br>![](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/22c027f63c540592d3ca8f41d48bb107_CSas7OYJBR.png?height=1994&maxWidth=550&width=3278)<br>![image.png](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/9f3353931fafeea16a39f0eb887db175_0tjzC9P3zU.png?maxWidth=550)<br>**注意**：<br>在 **添加文档应用** 前，你需确保目标应用至少开通了一个多维表格的 [API 权限](https://open.feishu.cn/document/ukTMukTMukTM/uYTM5UjL2ETO14iNxkTN/scope-list)。否则你将无法在文档应用窗口搜索到目标应用。    <br>- 你也可以在 **多维表格高级权限设置** 中添加用户或一个包含应用的群组, 给予这个群自定义的读写等权限。
+500 | 1254060 | TextFieldConvFail | 多行文本字段错误
+500 | 1254061 | NumberFieldConvFail | 数字字段错误
+500 | 1254062 | SingleSelectFieldConvFail | 单选字段错误
+500 | 1254063 | MultiSelectFieldConvFail | 多选字段错误
+500 | 1254064 | DatetimeFieldConvFail | 日期字段错误
+500 | 1254065 | CheckboxFieldConvFail | 复选框字段错误
+500 | 1254066 | UserFieldConvFail | 人员字段有误。原因可能是：<br>- `user_id_type` 参数指定的 ID 类型与传入的 ID 类型不匹配<br>- 传入了不识别的类型或结构，目前只支持填写 `id` 参数，且需要传入数组<br>- 跨应用传入了 `open_id`。如果跨应用传入 ID，建议使用 `user_id`。不同应用获取的 `open_id` 不能交叉使用<br>- 若想对人员字段传空，可传 null
+500 | 1254067 | LinkFieldConvFail | 关联字段错误
+500 | 1254068 | URLFieldConvFail | 超链接字段错误
+500 | 1254069 | AttachFieldConvFail | 附件字段错误
+400 | 1254072 | Failed to convert phone field, please make sure it is correct. | 电话字段错误
+400 | 1254100 | TableExceedLimit | 数据表或仪表盘数量超限。每个多维表格中，数据表加仪表盘的数量最多为 100 个
+400 | 1254101 | ViewExceedLimit | 视图数量超限, 限制 200 个
+400 | 1254102 | FileExceedLimit | 文件数量超限
+400 | 1254103 | RecordExceedLimit | 记录数量超限, 限制 20,000 条
+400 | 1254104 | RecordAddOnceExceedLimit | 单次添加记录数量超限, 单次调用最多更新 1,000 条记录
+400 | 1254107 | FilterLengthExceedLimit | Filter长度超限, 限制 2,000 个字符
+400 | 1254108 | SortLengthExceedLimit | Sort 长度超限, 限制 1,000 个字符
+400 | 1254109 | FormulaTableSizeExceedLimit | 公式表大小超限
+400 | 1254130 | TooLargeCell | 格子内容过大
+400 | 1254290 | TooManyRequest | 请求过快，稍后重试
+400 | 1254291 | LockNotObtainedError | 在同一个数据表中，并发调用了读写接口或请求过快，出现冲突。请参考以下建议解决：<br>- 确保没有并发调用多维表格读写相关接口<br>- 若操作量较大，建议在接口与接口之间增加 0.5 或 1 秒的延迟，也可在报错中增加重试逻辑，确保业务的稳定性<br>- 对于写接口，可以将接口中的查询参数 `ignore_consistency_check` 设置为 true，表示在读写操作时，暂时忽略一致性检查，以提高性能
+400 | 1254301 | OperationTypeError | 多维表格未开启高级权限或不支持开启高级权限
+400 | 1254302 | RolePermNotAllow | 无访问权限，常由表格开启了高级权限造成。请确保当前调用身份具有高级权限或多维表格的管理权限：<br>- 对于应用身份，你需要通过云文档网页页面右上方 「**...**」->「**...更多**」-> 「**添加文档应用**」入口添加并授予应用可管理权限，或在高级权限设置中添加一个包含应用的群组，给予这个群读写权限<br>- 对于用户身份，你需要通过云文档网页的「**分享**」入口授予用户管理权限<br>了解更多，参考[如何为应用或用户开通云文档权限](https://open.feishu.cn/document/ukTMukTMukTM/uczNzUjL3czM14yN3MTN#16c6475a)。
+400 | 1254303 | AttachPermNotAllow | 附件无权限
+500 | 1255001 | InternalError | 内部错误，请联系[技术支持](https://applink.feishu.cn/TLJpeNdW)
+500 | 1255002 | RpcError | 内部错误，请联系[技术支持](https://applink.feishu.cn/TLJpeNdW)
+500 | 1255003 | MarshalError | 序列化错误，请联系[技术支持](https://applink.feishu.cn/TLJpeNdW)
+500 | 1255004 | UmMarshalError | 反序列化错误，请联系[技术支持](https://applink.feishu.cn/TLJpeNdW)
+500 | 1255005 | ConvError | 内部错误，请联系[技术支持](https://applink.feishu.cn/TLJpeNdW)
+504 | 1255040 | Request timed out, please try again later | 请求超时
+500 | 1254607 | Data not ready, please try again later | 该报错一般是由于前置操作未执行完成，或本次操作数据太大，服务器计算超时导致。遇到该错误码时，建议等待一段时间后重试。通常有以下几种原因：<br>- **编辑操作频繁**：开发者对多维表格的编辑操作非常频繁。可能会导致由于等待前置操作处理完成耗时过长而超时的情况。多维表格底层对数据表的处理基于版本维度的串行方式，不支持并发。因此，并发请求时容易出现此类错误，不建议开发者对单个数据表进行并发请求。<br>- **批量操作负载重**：开发者在多维表格中进行批量新增、删除等操作时，如果数据表的数据量非常大，可能会导致单次请求耗时过长，最终导致请求超时。建议开发者适当降低批量请求的 page_size 以减少请求耗时。<br>- **资源分配与计算开销**：资源分配是基于单文档维度的，如果读接口涉及公式计算、排序等计算逻辑，会占用较多资源。例如，并发读取一个文档下的多个数据表也可能导致该文档阻塞。
+# 删除多条记录
+
+删除多维表格数据表中现有的多条记录。
+
+## 前提条件
+
+调用此接口前，请确保当前调用身份（tenant_access_token 或 user_access_token）已有多维表格的编辑等文档权限，否则接口将返回 HTTP 403 或 400 状态码。了解更多，参考[如何为应用或用户开通文档权限](https://open.feishu.cn/document/ukTMukTMukTM/uczNzUjL3czM14yN3MTN#16c6475a)。
+## 注意事项
+
+- 从其它数据源同步的数据表，不支持开发者对记录进行增加、删除、和修改操作。
+- 单次调用中最多删除 500 条记录。
+
+## 请求
+
+基本 | 
+---|---
+HTTP URL | https://open.feishu.cn/open-apis/bitable/v1/apps/:app_token/tables/:table_id/records/batch_delete
+HTTP Method | POST
+接口频率限制 | [50 次/秒](https://open.feishu.cn/document/ukTMukTMukTM/uUzN04SN3QjL1cDN)
+支持的应用类型 | Custom App、Store App
+权限要求<br>**调用该 API 所需的权限。开启其中任意一项权限即可调用**<br>开启任一权限即可 | 删除记录(base:record:delete)<br>查看、评论、编辑和管理多维表格(bitable:app)
+
+### 请求头
+
+名称 | 类型 | 必填 | 描述
+---|---|---|---
+Authorization | string | 是 | `tenant_access_token`<br>或<br>`user_access_token`<br>**值格式**："Bearer `access_token`"<br>**示例值**："Bearer u-7f1bcd13fc57d46bac21793a18e560"<br>[了解更多：如何选择与获取 access token](https://open.feishu.cn/document/uAjLw4CM/ugTN1YjL4UTN24CO1UjN/trouble-shooting/how-to-choose-which-type-of-token-to-use)
+Content-Type | string | 是 | **固定值**："application/json; charset=utf-8"
+
+### 路径参数
+
+名称 | 类型 | 描述
+---|---|---
+app_token | string | 多维表格 App 的唯一标识。不同形态的多维表格，其 `app_token` 的获取方式不同：<br>- 如果多维表格的 URL 以 ==**feishu.cn/base**== 开头，该多维表格的 `app_token` 是下图高亮部分：<br>![app_token.png](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/6916f8cfac4045ba6585b90e3afdfb0a_GxbfkJHZBa.png?height=766&lazyload=true&width=3004)<br>- 如果多维表格的 URL 以 ==**feishu.cn/wiki**== 开头，你需调用知识库相关[获取知识空间节点信息](https://open.feishu.cn/document/ukTMukTMukTM/uUDN04SN0QjL1QDN/wiki-v2/space/get_node)接口获取多维表格的 app_token。当 `obj_type` 的值为 `bitable` 时，`obj_token` 字段的值才是多维表格的 `app_token`。<br>了解更多，参考[多维表格 app_token 获取方式](https://open.feishu.cn/document/ukTMukTMukTM/uUDN04SN0QjL1QDN/bitable-overview#-752212c)。<br>**示例值**："appbcbWCzen6D8dezhoCH2RpMAh"
+table_id | string | 多维表格数据表的唯一标识。获取方式：<br>- 你可通过多维表格 URL 获取 `table_id`，下图高亮部分即为当前数据表的 `table_id`<br>- 也可通过[列出数据表](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table/list)接口获取 `table_id`<br>![](//sf3-cn.feishucdn.com/obj/open-platform-opendoc/18741fe2a0d3cafafaf9949b263bb57d_yD1wkOrSju.png?height=746&lazyload=true&maxWidth=700&width=2976)<br>**示例值**："tblsRc9GRRXKqhvW"
+
+### 请求体
+
+名称 | 类型 | 必填 | 描述
+---|---|---|---
+records | string\[\] | 是 | 删除的多条记录 ID 列表。通过[查询记录](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/bitable-v1/app-table-record/search)接口获取。<br>**注意**：<br>单次调用中最多删除 500 条记录。<br>**示例值**：["recwNXzPQv"]
+
+### 请求体示例
+```json
+{
+    "records": [
+        "recwNXzPQv"
+    ]
+}
+```
+
+## 响应
+
+### 响应体
+
+名称 | 类型 | 描述
+---|---|---
+code | int | 错误码，非 0 表示失败
+msg | string | 错误描述
+data | \- | \-
+records | delete_record\[\] | 删除的记录列表
+deleted | boolean | 是否成功删除：<br>- true：成功删除<br>- false：未删除
+record_id | string | 记录的 ID
+
+### 响应体示例
+```json
+{
+    "code": 0,
+    "msg": "success",
+    "data": {
+        "records": [
+            {
+                "deleted": true,
+                "record_id": "recpCsf4ME"
+            }
+        ]
+    }
+}
+```
+
+### 错误码
+
+HTTP状态码 | 错误码 | 描述 | 排查建议
+---|---|---|---
+200 | 1254000 | WrongRequestJson | 请求体错误
+200 | 1254001 | WrongRequestBody | 请求体错误
+200 | 1254002 | Fail | 内部错误，请联系[技术支持](https://applink.feishu.cn/TLJpeNdW)
+200 | 1254003 | WrongBaseToken | app_token 错误
+200 | 1254004 | WrongTableId | table_id 错误
+200 | 1254005 | WrongViewId | view_id 错误
+200 | 1254006 | WrongRecordId | 检查 record_id
+200 | 1254007 | EmptyValue | 空值
+200 | 1254008 | EmptyView | 空视图
+200 | 1254009 | WrongFieldId | 字段 id 错误
+200 | 1254010 | ReqConvError | 请求错误
+200 | 1254030 | TooLargeResponse | 响应体过大
+400 | 1254036 | Base is copying, please try again later. | 多维表格副本复制中，稍后重试
+200 | 1254040 | BaseTokenNotFound | app_token 不存在
+200 | 1254041 | TableIdNotFound | table_id 不存在
+200 | 1254042 | ViewIdNotFound | view_id 不存在
+200 | 1254043 | RecordIdNotFound | record_id 不存在
+200 | 1254044 | FieldIdNotFound | field_id  不存在
+200 | 1254060 | TextFieldConvFail | 多行文本字段错误
+200 | 1254061 | NumberFieldConvFail | 数字字段错误
+200 | 1254062 | SingleSelectFieldConvFail | 单选字段错误
+200 | 1254063 | MultiSelectFieldConvFail | 多选字段错误
+200 | 1254064 | DatetimeFieldConvFail | 日期字段错误
+200 | 1254065 | CheckboxFieldConvFail | 复选框字段错误
+200 | 1254066 | UserFieldConvFail | 人员字段有误。原因可能是：<br>- `user_id_type` 参数指定的 ID 类型与传入的 ID 类型不匹配<br>- 传入了不识别的类型或结构，目前只支持填写 `id` 参数，且需要传入数组<br>- 跨应用传入了 `open_id`。如果跨应用传入 ID，建议使用 `user_id`。不同应用获取的 `open_id` 不能交叉使用
+200 | 1254067 | LinkFieldConvFail | 关联字段错误
+200 | 1254072 | InvalidPhoneNumber | 转换手机号码格式失败，请检查传入的手机号码格式是否正确
+200 | 1254100 | TableExceedLimit | 数据表或仪表盘数量超限。每个多维表格中，数据表加仪表盘的数量最多为 100 个
+200 | 1254101 | ViewExceedLimit | 视图数量超限, 限制200个
+200 | 1254102 | FileExceedLimit | 文件数量超限
+200 | 1254103 | RecordExceedLimit | 记录数量超限, 限制20,000条
+200 | 1254104 | RecordAddOnceExceedLimit | 单次添加记录数量超限, 限制500条
+200 | 1254130 | TooLargeCell | 格子内容过大
+200 | 1254290 | TooManyRequest | 请求过快，稍后重试
+200 | 1254291 | Write conflict | 同一个数据表(table) 不支持并发调用写接口，请检查是否存在并发调用写接口。写接口包括：新增、修改、删除记录；新增、修改、删除字段；修改表单；修改视图等。
+200 | 1254301 | OperationTypeError | 多维表格未开启高级权限或不支持开启高级权限
+200 | 1255001 | InternalError | 内部错误，请联系[技术支持](https://applink.feishu.cn/TLJpeNdW)
+200 | 1255002 | RpcError | 内部错误，请联系[技术支持](https://applink.feishu.cn/TLJpeNdW)
+200 | 1255003 | MarshalError | 序列化错误，请联系[技术支持](https://applink.feishu.cn/TLJpeNdW)
+200 | 1255004 | UmMarshalError | 反序列化错误
+200 | 1255005 | ConvError | 内部错误，请联系[技术支持](https://applink.feishu.cn/TLJpeNdW)
+504 | 1255040 | Request timed out, please try again later. | 请求超时，请进行重试
+400 | 1254607 | Data not ready, please try again later | 该报错一般是由于前置操作未执行完成，或本次操作数据太大，服务器计算超时导致。遇到该错误码时，建议等待一段时间后重试。通常有以下几种原因：<br>- **编辑操作频繁**：开发者对多维表格的编辑操作非常频繁。可能会导致由于等待前置操作处理完成耗时过长而超时的情况。多维表格底层对数据表的处理基于版本维度的串行方式，不支持并发。因此，并发请求时容易出现此类错误，不建议开发者对单个数据表进行并发请求。<br>- **批量操作负载重**：开发者在多维表格中进行批量新增、删除等操作时，如果数据表的数据量非常大，可能会导致单次请求耗时过长，最终导致请求超时。建议开发者适当降低批量请求的 page_size 以减少请求耗时。<br>- **资源分配与计算开销**：资源分配是基于单文档维度的，如果读接口涉及公式计算、排序等计算逻辑，会占用较多资源。例如，并发读取一个文档下的多个数据表也可能导致该文档阻塞。
+403 | 1254302 | Permission denied. | 无访问权限，常由表格开启了高级权限造成。请确保当前调用身份具有高级权限或多维表格的管理权限：<br>- 对于应用身份，你需要通过云文档网页页面右上方 「**...**」->「**...更多**」-> 「**添加文档应用**」入口添加并授予应用可管理权限，或在高级权限设置中添加一个包含应用的群组，给予这个群读写权限<br>- 对于用户身份，你需要通过云文档网页的「**分享**」入口授予用户管理权限<br>了解更多，参考[如何为应用或用户开通云文档权限](https://open.feishu.cn/document/ukTMukTMukTM/uczNzUjL3czM14yN3MTN#16c6475a)。
+403 | 1254304 | Permission denied. | 权限不足。请检查多维表格是否开启了高级权限，如果开启高级权限，调用身份需要有多维表格的可管理权限
+403 | 1254608 | ReqRecommited | 请求重复，请稍后再试
